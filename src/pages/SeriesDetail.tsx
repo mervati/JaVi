@@ -32,6 +32,53 @@ interface Series {
   number_of_seasons: number
 }
 
+interface PendingEp {
+  season: number
+  episode: number
+  prevUnwatched: number[]
+}
+
+function ConfirmPreviousModal({
+  pending,
+  onMarkAll,
+  onJustThis,
+}: {
+  pending: PendingEp
+  onMarkAll: () => void
+  onJustThis: () => void
+}) {
+  const first = pending.prevUnwatched[0]
+  const last = pending.prevUnwatched[pending.prevUnwatched.length - 1]
+  const range = first === last ? `episódio ${first}` : `episódios ${first} a ${last}`
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/70" onClick={onJustThis} />
+      <div className="relative w-full bg-[#1a1a1a] rounded-t-2xl px-5 py-6 flex flex-col gap-4">
+        <div className="w-10 h-1 bg-[#333] rounded-full mx-auto mb-1" />
+        <p className="text-white font-bold text-base text-center">
+          Marcar episódios anteriores?
+        </p>
+        <p className="text-[#888] text-sm text-center leading-relaxed">
+          Você também assistiu os {range} da Temporada {pending.season}?
+        </p>
+        <button
+          onClick={onMarkAll}
+          className="w-full bg-[#5cb85c] text-white font-bold py-4 rounded-xl text-sm"
+        >
+          Sim, marcar {range} também
+        </button>
+        <button
+          onClick={onJustThis}
+          className="w-full border border-[#333] text-[#aaa] font-medium py-4 rounded-xl text-sm"
+        >
+          Não, só o episódio {pending.episode}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SeasonRow({
   seriesId,
   season,
@@ -42,6 +89,7 @@ function SeasonRow({
   const [open, setOpen] = useState(false)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [loading, setLoading] = useState(false)
+  const [pending, setPending] = useState<PendingEp | null>(null)
   const { isWatched, toggleEpisode, markSeason, countWatchedInSeason } = useEpisodes(seriesId)
 
   const watched = countWatchedInSeason(season.season_number, season.episode_count)
@@ -65,94 +113,137 @@ function SeasonRow({
     await markSeason(season.season_number, eps, !allWatched)
   }
 
-  return (
-    <div className="border-b border-[#1a1a1a]">
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={handleOpen} className="flex items-center gap-2 flex-1 text-left">
-            <span className="text-white font-bold text-sm">{season.name}</span>
-            <svg
-              className={`w-4 h-4 text-[#555] transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+  async function handleEpisodeTap(ep: Episode) {
+    const alreadyWatched = isWatched(season.season_number, ep.episode_number)
 
-          <div className="flex items-center gap-3">
-            <span className="text-[#888] text-xs">{watched}/{season.episode_count}</span>
-            <button
-              onClick={handleMarkSeason}
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
-                allWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#444]'
-              }`}
-            >
-              <svg className={`w-3.5 h-3.5 ${allWatched ? 'text-white' : 'text-[#444]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    if (alreadyWatched) {
+      await toggleEpisode(season.season_number, ep.episode_number)
+      return
+    }
+
+    const prevUnwatched = Array.from(
+      { length: ep.episode_number - 1 },
+      (_, i) => i + 1
+    ).filter(n => !isWatched(season.season_number, n))
+
+    if (prevUnwatched.length > 0) {
+      setPending({ season: season.season_number, episode: ep.episode_number, prevUnwatched })
+    } else {
+      await toggleEpisode(season.season_number, ep.episode_number)
+    }
+  }
+
+  async function handleMarkAll() {
+    if (!pending) return
+    const all = [...pending.prevUnwatched, pending.episode]
+    await markSeason(pending.season, all, true)
+    setPending(null)
+  }
+
+  async function handleJustThis() {
+    if (!pending) return
+    await toggleEpisode(pending.season, pending.episode)
+    setPending(null)
+  }
+
+  return (
+    <>
+      {pending && (
+        <ConfirmPreviousModal
+          pending={pending}
+          onMarkAll={handleMarkAll}
+          onJustThis={handleJustThis}
+        />
+      )}
+
+      <div className="border-b border-[#1a1a1a]">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={handleOpen} className="flex items-center gap-2 flex-1 text-left">
+              <span className="text-white font-bold text-sm">{season.name}</span>
+              <svg
+                className={`w-4 h-4 text-[#555] transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[#888] text-xs">{watched}/{season.episode_count}</span>
+              <button
+                onClick={handleMarkSeason}
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
+                  allWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#444]'
+                }`}
+              >
+                <svg className={`w-3.5 h-3.5 ${allWatched ? 'text-white' : 'text-[#444]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
           </div>
+
+          {watched > 0 && (
+            <div className="h-0.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#f5b730] rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
         </div>
 
-        {watched > 0 && (
-          <div className="h-0.5 bg-[#1a1a1a] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#f5b730] rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
+        {open && (
+          <div>
+            {loading ? (
+              <div className="px-4 py-6 flex justify-center">
+                <div className="w-5 h-5 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              episodes.map(ep => (
+                <div key={ep.id} className="flex items-center gap-3 px-4 py-2.5 border-t border-[#111]">
+                  <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
+                    {ep.still_path
+                      ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                          </svg>
+                        </div>
+                    }
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#888] text-[11px] font-bold">
+                      T{String(season.season_number).padStart(2, '0')} | E{String(ep.episode_number).padStart(2, '0')}
+                    </p>
+                    <p className="text-white text-sm font-medium leading-tight line-clamp-1">{ep.name}</p>
+                    {ep.runtime && <p className="text-[#555] text-[11px] mt-0.5">{ep.runtime} min</p>}
+                  </div>
+
+                  <button
+                    onClick={() => handleEpisodeTap(ep)}
+                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
+                      isWatched(season.season_number, ep.episode_number)
+                        ? 'bg-[#5cb85c] border-[#5cb85c]'
+                        : 'border-[#333]'
+                    }`}
+                  >
+                    <svg
+                      className={`w-3.5 h-3.5 ${isWatched(season.season_number, ep.episode_number) ? 'text-white' : 'text-[#333]'}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
-
-      {open && (
-        <div>
-          {loading ? (
-            <div className="px-4 py-6 flex justify-center">
-              <div className="w-5 h-5 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            episodes.map(ep => (
-              <div key={ep.id} className="flex items-center gap-3 px-4 py-2.5 border-t border-[#111]">
-                <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
-                  {ep.still_path
-                    ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                        </svg>
-                      </div>
-                  }
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#888] text-[11px] font-bold">
-                    T{String(season.season_number).padStart(2, '0')} | E{String(ep.episode_number).padStart(2, '0')}
-                  </p>
-                  <p className="text-white text-sm font-medium leading-tight line-clamp-1">{ep.name}</p>
-                  {ep.runtime && <p className="text-[#555] text-[11px] mt-0.5">{ep.runtime} min</p>}
-                </div>
-
-                <button
-                  onClick={() => toggleEpisode(season.season_number, ep.episode_number)}
-                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
-                    isWatched(season.season_number, ep.episode_number)
-                      ? 'bg-[#5cb85c] border-[#5cb85c]'
-                      : 'border-[#333]'
-                  }`}
-                >
-                  <svg
-                    className={`w-3.5 h-3.5 ${isWatched(season.season_number, ep.episode_number) ? 'text-white' : 'text-[#333]'}`}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+    </>
   )
 }
 
