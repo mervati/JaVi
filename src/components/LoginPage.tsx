@@ -4,13 +4,10 @@ export function LoginPage() {
   const { login } = useAuth()
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-10 px-6">
+    <div className="relative min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-10 px-6">
       <div className="text-center flex flex-col items-center gap-3">
-        <div className="w-20 h-20 bg-[#f5b730] rounded-2xl flex items-center justify-center mb-2">
-          <span className="text-3xl font-black text-black">JV</span>
-        </div>
-        <h1 className="text-4xl font-black text-white tracking-tight">JáVi</h1>
-        <p className="text-[#888] text-base">Acompanhe filmes e séries que você já viu</p>
+        <img src="/icon-192.png" alt="JáVi" className="w-24 h-24 rounded-2xl mb-2" />
+<p className="text-[#888] text-base">Acompanhe filmes e séries que você já viu</p>
       </div>
 
       <div className="w-full max-w-xs flex flex-col gap-3">
@@ -25,6 +22,10 @@ export function LoginPage() {
 
       <p className="text-[#444] text-xs text-center px-8">
         Ao entrar, você concorda com o uso dos seus dados para salvar sua lista pessoal.
+      </p>
+
+      <p className="absolute bottom-6 text-[#f5b730] text-[10px] text-center opacity-60">
+        © 2026 JáVi · Mariana Ervati
       </p>
     </div>
   )

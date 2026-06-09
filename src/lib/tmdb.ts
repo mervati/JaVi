@@ -45,6 +45,12 @@ export async function getSeasonEpisodes(seriesId: number, seasonNumber: number) 
   return res.json()
 }
 
+export async function getCredits(id: number, type: 'movie' | 'tv') {
+  const res = await fetch(`${BASE_URL}/${type}/${id}/credits?language=pt-BR`, { headers })
+  const data = await res.json()
+  return data.cast ?? []
+}
+
 export async function getTrending(timeWindow: 'day' | 'week') {
   const res = await fetch(`${BASE_URL}/trending/all/${timeWindow}?language=pt-BR`, { headers })
   const data = await res.json()

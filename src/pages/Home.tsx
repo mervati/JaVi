@@ -356,12 +356,12 @@ export function Home() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="flex sticky top-[53px] bg-[#0a0a0a] z-30 overflow-x-auto">
+      <div className="tabs-nav sticky top-[53px] bg-[#0a0a0a] z-30">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`btn flex-shrink-0 whitespace-nowrap ${tab === t.key ? 'btn-active' : ''}`}
+            className={`btn ${tab === t.key ? 'btn-active' : ''}`}
           >
             {t.label}
           </button>

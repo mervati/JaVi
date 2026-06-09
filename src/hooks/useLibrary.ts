@@ -15,7 +15,7 @@ export interface LibraryItem {
   type: 'movie' | 'tv'
   title: string
   poster: string | null
-  status: 'watched' | 'watchlist' | 'watching'
+  status: 'watched' | 'watchlist' | 'watching' | 'abandoned'
   rating: number
   addedAt: number
 }

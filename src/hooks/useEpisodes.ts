@@ -58,5 +58,5 @@ export function useEpisodes(seriesId: number) {
     return count
   }
 
-  return { isWatched, toggleEpisode, markSeason, countWatchedInSeason }
+  return { isWatched, toggleEpisode, markSeason, countWatchedInSeason, watchedCount: watched.size }
 }

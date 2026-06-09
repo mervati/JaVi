@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl } from '../lib/tmdb'
+import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits } from '../lib/tmdb'
 import { useLibrary } from '../hooks/useLibrary'
 import { StarRating } from '../components/StarRating'
 
@@ -33,6 +33,8 @@ export function MovieDetail() {
   const navigate = useNavigate()
   const [movie, setMovie] = useState<Movie | null>(null)
   const [providers, setProviders] = useState<Providers | null>(null)
+  const [cast, setCast] = useState<any[]>([])
+  const [tab, setTab] = useState<'sobre' | 'elenco'>('sobre')
   const [loading, setLoading] = useState(true)
   const { saveItem, removeItem, getItem } = useLibrary()
 
@@ -44,9 +46,11 @@ export function MovieDetail() {
     Promise.all([
       getDetails(movieId, 'movie'),
       getWatchProviders(movieId, 'movie'),
-    ]).then(([details, prov]) => {
+      getCredits(movieId, 'movie'),
+    ]).then(([details, prov, credits]) => {
       setMovie(details)
       setProviders(prov)
+      setCast(credits.slice(0, 20))
       setLoading(false)
     })
   }, [movieId])
@@ -152,34 +156,69 @@ export function MovieDetail() {
         </div>
       )}
 
-      {movie.genres?.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '12px 16px 16px', borderBottom: '1px solid #1a1a1a' }}>
-          {movie.genres.map(g => (
-            <span key={g.id} style={{ padding: '4px 10px', borderRadius: '999px', background: '#f5b730', color: '#000', fontSize: '11px', fontWeight: 'bold' }}>
-              {g.name}
-            </span>
-          ))}
+      <div className="flex border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">
+        {(['sobre', 'elenco'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`btn flex-1 ${tab === t ? 'btn-active' : ''}`}
+          >
+            {t === 'sobre' ? 'SOBRE' : 'ELENCO'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'sobre' && (
+        <div className="px-4 py-5">
+          {movie.genres?.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              {movie.genres.map(g => (
+                <span key={g.id} style={{ padding: '4px 10px', borderRadius: '999px', background: '#f5b730', color: '#000', fontSize: '11px', fontWeight: 'bold' }}>
+                  {g.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {movie.overview ? (
+            <p className="text-[#aaa] text-sm leading-relaxed mb-5">{movie.overview}</p>
+          ) : null}
+
+          {allProviders.length > 0 && (
+            <div>
+              <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
+              <div className="flex gap-3 flex-wrap">
+                {allProviders.map(p => (
+                  <div key={p.provider_id} className="flex flex-col items-center gap-1">
+                    <img
+                      src={`https://image.tmdb.org/t/p/w45${p.logo_path}`}
+                      alt={p.provider_name}
+                      className="w-10 h-10 rounded-lg"
+                    />
+                    <span className="text-[9px] text-[#555] text-center max-w-[48px] leading-tight">{p.provider_name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {movie.overview ? (
-        <div className="px-4 py-4 border-b border-[#1a1a1a]">
-          <p className="text-[#aaa] text-sm leading-relaxed">{movie.overview}</p>
-        </div>
-      ) : null}
-
-      {allProviders.length > 0 && (
-        <div className="px-4 py-4">
-          <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
-          <div className="flex gap-3 flex-wrap">
-            {allProviders.map(p => (
-              <div key={p.provider_id} className="flex flex-col items-center gap-1">
-                <img
-                  src={`https://image.tmdb.org/t/p/w45${p.logo_path}`}
-                  alt={p.provider_name}
-                  className="w-10 h-10 rounded-lg"
-                />
-                <span className="text-[9px] text-[#555] text-center max-w-[48px] leading-tight">{p.provider_name}</span>
+      {tab === 'elenco' && cast.length > 0 && (
+        <div className="px-4 py-5">
+          <div className="flex gap-4 flex-wrap">
+            {cast.map(actor => (
+              <div key={actor.id} className="w-20 flex flex-col items-center gap-1.5">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-[#1a1a1a]">
+                  {actor.profile_path
+                    ? <img src={getThumbUrl(actor.profile_path) ?? ''} alt={actor.name} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-[#555] text-xl font-bold">
+                        {actor.name?.[0] ?? '?'}
+                      </div>
+                  }
+                </div>
+                <p className="text-white text-[10px] font-bold text-center leading-tight line-clamp-2">{actor.name}</p>
+                <p className="text-[#888] text-[10px] text-center leading-tight line-clamp-2">{actor.character}</p>
               </div>
             ))}
           </div>

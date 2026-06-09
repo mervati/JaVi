@@ -38,9 +38,12 @@ function AppContent() {
   return (
     <div className={isDetail ? '' : 'pb-20'}>
       {!isDetail && (
-        <header className="flex items-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] sticky top-0 z-40"
+        <header className="flex items-center justify-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] sticky top-0 z-40"
           style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px' }}>
-          <span className="text-white font-black text-xl tracking-tight">JáVi</span>
+          <div className="flex items-center gap-2">
+            <img src="/icon-192.png" alt="JáVi" className="w-9 h-9 rounded-lg" />
+            <span className="text-white font-black text-2xl tracking-tight">JáVi</span>
+          </div>
         </header>
       )}
 

@@ -19,11 +19,11 @@ body {
 }
 
 .boton-elegante {
-  padding: 15px 30px;
+  padding: 18px 36px;
   border: 2px solid #2c2c2c;
   background-color: #1a1a1a;
   color: #ffffff;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   cursor: pointer;
   border-radius: 30px;
   transition: all 0.4s ease;
@@ -59,8 +59,8 @@ body {
 }
 
 .boton-elegante.boton-sm {
-  padding: 4px 10px;
-  font-size: 0.65rem;
+  padding: 6px 14px;
+  font-size: 0.72rem;
 }
 
 .boton-elegante.boton-active {
@@ -75,10 +75,10 @@ body {
 }
 
 .btn {
-  font-size: 11px;
+  font-size: 10px;
   background: transparent;
   border: none;
-  padding: 0.6em 1em;
+  padding: 1em 1.5em;
   color: #ffedd3;
   text-transform: uppercase;
   position: relative;
@@ -135,4 +135,71 @@ body {
 .btn.btn-active::after {
   height: 100%;
   transition: none;
+}
+
+.search-group {
+  display: flex;
+  line-height: 28px;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  font-family: "Montserrat", system-ui, sans-serif;
+  width: 100%;
+  height: 45px;
+  padding-left: 2.5rem;
+  padding-right: 1rem;
+  box-shadow: 0 0 0 1.5px #2b2c37, 0 0 25px -17px #000;
+  border: 0;
+  border-radius: 12px;
+  background-color: #16171d;
+  outline: none;
+  color: #bdbecb;
+  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+  cursor: text;
+  z-index: 0;
+  font-size: 15px;
+}
+
+.search-input::placeholder {
+  color: #bdbecb;
+}
+
+.search-input:hover {
+  box-shadow: 0 0 0 2.5px #2f303d, 0px 0px 25px -15px #000;
+}
+
+.search-input:active {
+  transform: scale(0.95);
+}
+
+.search-input:focus {
+  box-shadow: 0 0 0 2.5px #2f303d;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  fill: #bdbecb;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tabs-nav {
+  display: flex;
+  width: 100%;
+}
+
+.tabs-nav .btn {
+  flex: 1;
+  font-size: 10px;
+  padding: 0.65em 0.3em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -13,6 +13,7 @@ export function SearchBar({ onSearch, onClear }: Props) {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setValue(e.target.value)
     if (e.target.value.trim()) onSearch(e.target.value.trim())
+    else onClear?.()
   }
 
   function handleCancel() {
@@ -23,27 +24,25 @@ export function SearchBar({ onSearch, onClear }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-      <div className={`flex-1 flex items-center gap-2 border-b-2 pb-2 transition-colors ${focused ? 'border-white' : 'border-[#333]'}`}>
-        <svg className="w-4 h-4 text-[#888] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+      <div className="search-group">
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="search-icon">
+          <g>
+            <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z" />
+          </g>
         </svg>
         <input
           ref={inputRef}
+          id="query"
+          className="search-input"
+          type="search"
+          placeholder="Buscar séries e filmes..."
+          name="searchbar"
           value={value}
           onChange={handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Buscar séries e filmes..."
-          className="flex-1 bg-transparent text-white placeholder-[#555] text-base outline-none"
         />
-        {value && (
-          <button onClick={handleCancel} className="text-[#888] p-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </button>
-        )}
       </div>
       {focused && (
         <button onClick={handleCancel} className="text-[#f5b730] text-sm font-medium flex-shrink-0">

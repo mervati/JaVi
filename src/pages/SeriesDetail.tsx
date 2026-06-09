@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl } from '../lib/tmdb'
+import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits } from '../lib/tmdb'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { useLibrary } from '../hooks/useLibrary'
+import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
 interface Episode {
   id: number
@@ -88,6 +89,97 @@ function ConfirmPreviousModal({
             Nunca para esta série
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function SwipeableEpisode({
+  ep,
+  seasonNumber,
+  watched,
+  onTap,
+}: {
+  ep: Episode
+  seasonNumber: number
+  watched: boolean
+  onTap: () => void
+}) {
+  const [offsetX, setOffsetX] = useState(0)
+  const startX = useRef(0)
+  const dragging = useRef(false)
+  const THRESHOLD = -70
+  const MAX_SWIPE = -80
+
+  function onTouchStart(e: React.TouchEvent) {
+    startX.current = e.touches[0].clientX
+    dragging.current = true
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!dragging.current) return
+    const dx = e.touches[0].clientX - startX.current
+    if (dx < 0) setOffsetX(Math.max(dx, MAX_SWIPE))
+  }
+
+  function onTouchEnd() {
+    dragging.current = false
+    if (offsetX <= THRESHOLD) onTap()
+    setOffsetX(0)
+  }
+
+  return (
+    <div className="relative overflow-hidden border-t border-[#111]">
+      <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${watched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
+        {watched
+          ? <FaEyeSlash className="text-white text-2xl" />
+          : <FaEye className="text-white text-2xl" />
+        }
+      </div>
+
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: `translateX(${offsetX}px)`,
+          transition: dragging.current ? 'none' : 'transform 0.25s ease',
+          background: '#0a0a0a',
+        }}
+        className="flex items-center gap-3 px-5 py-3"
+      >
+        <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
+          {ep.still_path
+            ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                </svg>
+              </div>
+          }
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-[#888] text-xs font-bold">
+            T{String(seasonNumber).padStart(2, '0')} | E{String(ep.episode_number).padStart(2, '0')}
+          </p>
+          <p className="text-white text-base font-medium leading-tight line-clamp-1">{ep.name}</p>
+          {ep.runtime && <p className="text-[#555] text-xs mt-0.5">{ep.runtime} min</p>}
+        </div>
+
+        <button
+          onClick={onTap}
+          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
+            watched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#333]'
+          }`}
+        >
+          <svg
+            className={`w-5 h-5 ${watched ? 'text-white' : 'text-[#333]'}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
       </div>
     </div>
   )
@@ -187,12 +279,12 @@ function SeasonRow({
       )}
 
       <div className="border-b border-[#1a1a1a]">
-        <div className="px-5 py-4">
+        <div className="px-5 py-5">
           <div className="flex items-center justify-between mb-2">
-            <button onClick={handleOpen} className="flex items-center gap-2 flex-1 text-left">
-              <span className="text-white font-bold text-base">{season.name}</span>
+            <button onClick={handleOpen} className="flex items-center gap-3 flex-1 text-left">
+              <span className="text-white font-bold text-lg">{season.name}</span>
               <svg
-                className={`w-4 h-4 text-[#555] transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 text-[#555] transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -200,14 +292,14 @@ function SeasonRow({
             </button>
 
             <div className="flex items-center gap-3">
-              <span className="text-[#888] text-xs">{watched}/{season.episode_count}</span>
+              <span className="text-[#888] text-sm">{watched}/{season.episode_count}</span>
               <button
                 onClick={handleMarkSeason}
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
+                className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
                   allWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#444]'
                 }`}
               >
-                <svg className={`w-3.5 h-3.5 ${allWatched ? 'text-white' : 'text-[#444]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${allWatched ? 'text-white' : 'text-[#444]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </button>
@@ -232,42 +324,13 @@ function SeasonRow({
               </div>
             ) : (
               episodes.map(ep => (
-                <div key={ep.id} className="flex items-center gap-3 px-5 py-3 border-t border-[#111]">
-                  <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
-                    {ep.still_path
-                      ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                          </svg>
-                        </div>
-                    }
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[#888] text-xs font-bold">
-                      T{String(season.season_number).padStart(2, '0')} | E{String(ep.episode_number).padStart(2, '0')}
-                    </p>
-                    <p className="text-white text-base font-medium leading-tight line-clamp-1">{ep.name}</p>
-                    {ep.runtime && <p className="text-[#555] text-xs mt-0.5">{ep.runtime} min</p>}
-                  </div>
-
-                  <button
-                    onClick={() => handleEpisodeTap(ep)}
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
-                      isWatched(season.season_number, ep.episode_number)
-                        ? 'bg-[#5cb85c] border-[#5cb85c]'
-                        : 'border-[#333]'
-                    }`}
-                  >
-                    <svg
-                      className={`w-3.5 h-3.5 ${isWatched(season.season_number, ep.episode_number) ? 'text-white' : 'text-[#333]'}`}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                </div>
+                <SwipeableEpisode
+                  key={ep.id}
+                  ep={ep}
+                  seasonNumber={season.season_number}
+                  watched={isWatched(season.season_number, ep.episode_number)}
+                  onTap={() => handleEpisodeTap(ep)}
+                />
               ))
             )}
           </div>
@@ -281,11 +344,13 @@ export function SeriesDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [series, setSeries] = useState<Series | null>(null)
+  const [cast, setCast] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'sobre' | 'episodios'>('episodios')
   const { saveItem, getItem } = useLibrary()
 
   const seriesId = Number(id)
+  const { countWatchedInSeason, watchedCount } = useEpisodes(seriesId)
 
   function handleEpisodeWatched() {
     if (!series) return
@@ -304,9 +369,28 @@ export function SeriesDetail() {
   }
 
   useEffect(() => {
+    if (!series) return
+    const existing = getItem(series.id, 'tv')
+    if (!existing) return
+    const seasons = series.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
+    if (seasons.length === 0) return
+    const allComplete = seasons.every(s =>
+      countWatchedInSeason(s.season_number, s.episode_count) === s.episode_count
+    )
+    const newStatus = allComplete ? 'watched' : 'watching'
+    if (existing.status !== newStatus) {
+      saveItem({ ...existing, status: newStatus })
+    }
+  }, [watchedCount, series])
+
+  useEffect(() => {
     setLoading(true)
-    getSeriesDetails(seriesId).then(data => {
+    Promise.all([
+      getSeriesDetails(seriesId),
+      getCredits(seriesId, 'tv'),
+    ]).then(([data, credits]) => {
       setSeries(data)
+      setCast(credits.slice(0, 20))
       setLoading(false)
     })
   }, [seriesId])
@@ -364,12 +448,9 @@ export function SeriesDetail() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-xs font-bold tracking-wider relative transition-colors ${
-              tab === t ? 'text-white' : 'text-[#555]'
-            }`}
+            className={`btn flex-1 ${tab === t ? 'btn-active' : ''}`}
           >
             {t === 'sobre' ? 'SOBRE' : 'EPISÓDIOS'}
-            {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />}
           </button>
         ))}
       </div>
@@ -389,6 +470,28 @@ export function SeriesDetail() {
             ? <p className="text-[#aaa] text-sm leading-relaxed">{series.overview}</p>
             : <p className="text-[#555] text-sm">Sem sinopse disponível.</p>
           }
+
+          {cast.length > 0 && (
+            <div className="mt-6">
+              <p className="text-white font-bold text-sm mb-3">Elenco</p>
+              <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
+                {cast.map(actor => (
+                  <div key={actor.id} className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-[#1a1a1a] flex-shrink-0">
+                      {actor.profile_path
+                        ? <img src={getThumbUrl(actor.profile_path) ?? ''} alt={actor.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-[#555] text-xl font-bold">
+                            {actor.name?.[0] ?? '?'}
+                          </div>
+                      }
+                    </div>
+                    <p className="text-white text-[10px] font-bold text-center leading-tight line-clamp-2">{actor.name}</p>
+                    <p className="text-[#888] text-[10px] text-center leading-tight line-clamp-2">{actor.character}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

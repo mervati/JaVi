@@ -22,7 +22,7 @@ export function Search() {
   }
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col" style={{ minHeight: 'calc(100svh - 53px - 70px)' }}>
       <div className="sticky top-[53px] bg-[#0a0a0a] z-30">
         <SearchBar onSearch={handleSearch} onClear={handleClear} />
         {searched && !loading && results.length > 0 && (
@@ -35,7 +35,7 @@ export function Search() {
       </div>
 
       {!searched && (
-        <div className="flex flex-col items-center justify-center flex-1 gap-4 px-6 py-20">
+        <div className="flex flex-col items-center justify-center gap-4 px-6" style={{ flex: 1 }}>
           <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center">
             <svg className="w-7 h-7 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
