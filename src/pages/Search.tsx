@@ -16,20 +16,57 @@ export function Search() {
     setLoading(false)
   }
 
+  function handleClear() {
+    setResults([])
+    setSearched(false)
+  }
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <SearchBar onSearch={handleSearch} />
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-[53px] bg-[#0a0a0a] z-30">
+        <SearchBar onSearch={handleSearch} onClear={handleClear} />
+        {searched && !loading && results.length > 0 && (
+          <div className="flex border-b border-[#1a1a1a]">
+            <div className="flex-1 text-center py-2 text-white text-xs font-bold border-b-2 border-white">
+              SÉRIES E FILMES
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!searched && (
+        <div className="flex flex-col items-center justify-center flex-1 gap-4 px-6 py-20">
+          <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center">
+            <svg className="w-7 h-7 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <p className="text-[#555] text-sm text-center">Busque um filme ou série para adicionar à sua lista</p>
+        </div>
+      )}
 
       {loading && (
-        <p className="text-gray-400 text-center mt-8">Buscando...</p>
+        <div className="flex flex-col gap-0">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#1a1a1a]">
+              <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg animate-pulse" />
+              <div className="flex-1 gap-2 flex flex-col">
+                <div className="h-3 bg-[#1a1a1a] rounded animate-pulse w-16" />
+                <div className="h-4 bg-[#1a1a1a] rounded animate-pulse w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {!loading && searched && results.length === 0 && (
-        <p className="text-gray-400 text-center mt-8">Nenhum resultado encontrado.</p>
+        <div className="flex flex-col items-center justify-center flex-1 gap-3 py-20">
+          <p className="text-[#555] text-sm">Nenhum resultado encontrado</p>
+        </div>
       )}
 
       {!loading && results.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 mt-6 sm:grid-cols-3">
+        <div>
           {results.map((item) => (
             <MediaCard key={`${item.media_type}-${item.id}`} media={item} />
           ))}
