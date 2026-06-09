@@ -50,7 +50,7 @@ function ConfirmPreviousModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-12">
       <div className="absolute inset-0 bg-black/75" onClick={onJustThis} />
-      <div className="relative w-full max-w-sm bg-[#2a2a2a] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative w-[72%] bg-[#2a2a2a] rounded-2xl overflow-hidden shadow-2xl">
         <div className="px-6 pt-7 pb-6 text-center">
           <p className="text-white font-bold text-xl leading-snug mb-3">
             Marcar episódios anteriores?
