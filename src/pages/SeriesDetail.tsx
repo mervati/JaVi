@@ -39,48 +39,51 @@ interface PendingEp {
 }
 
 function ConfirmPreviousModal({
-  pending,
   onMarkAll,
   onJustThis,
+  onNever,
 }: {
-  pending: PendingEp
   onMarkAll: () => void
   onJustThis: () => void
+  onNever: () => void
 }) {
-  const first = pending.prevUnwatched[0]
-  const last = pending.prevUnwatched[pending.prevUnwatched.length - 1]
-  const range = first === last ? `episódio ${first}` : `episódios ${first} a ${last}`
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-      <div className="absolute inset-0 bg-black/80" onClick={onJustThis} />
-      <div className="relative w-full max-w-sm bg-[#1e1e1e] rounded-2xl px-6 py-8 flex flex-col gap-5 shadow-2xl">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-14 h-14 bg-[#5cb85c]/15 rounded-full flex items-center justify-center">
-            <svg className="w-7 h-7 text-[#5cb85c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <p className="text-white font-bold text-lg text-center leading-snug">
+      <div className="absolute inset-0 bg-black/75" onClick={onJustThis} />
+      <div className="relative w-full max-w-sm bg-[#2a2a2a] rounded-2xl overflow-hidden shadow-2xl">
+        <div className="px-6 pt-7 pb-6 text-center">
+          <p className="text-white font-bold text-xl leading-snug mb-3">
             Marcar episódios anteriores?
           </p>
-          <p className="text-[#888] text-sm text-center leading-relaxed">
-            Você também assistiu os {range} da Temporada {pending.season}?
+          <p className="text-[#aaa] text-sm leading-relaxed">
+            Você deseja marcar todos os episódios anteriores como assistidos?
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 mt-1">
+        <div className="border-t border-[#3a3a3a]">
           <button
             onClick={onMarkAll}
-            className="w-full bg-[#5cb85c] text-white font-bold py-5 rounded-2xl text-base active:scale-95 transition-transform"
+            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
           >
-            Sim, marcar {range} também
+            Sim
           </button>
+        </div>
+
+        <div className="border-t border-[#3a3a3a]">
           <button
             onClick={onJustThis}
-            className="w-full bg-[#2a2a2a] text-[#ccc] font-semibold py-5 rounded-2xl text-base active:scale-95 transition-transform"
+            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
           >
-            Não, só o episódio {pending.episode}
+            Não
+          </button>
+        </div>
+
+        <div className="border-t border-[#3a3a3a]">
+          <button
+            onClick={onNever}
+            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
+          >
+            Nunca para esta série
           </button>
         </div>
       </div>
@@ -100,6 +103,8 @@ function SeasonRow({
   const [loading, setLoading] = useState(false)
   const [pending, setPending] = useState<PendingEp | null>(null)
   const { isWatched, toggleEpisode, markSeason, countWatchedInSeason } = useEpisodes(seriesId)
+  const neverAskKey = `javi_noask_${seriesId}`
+  const neverAsk = localStorage.getItem(neverAskKey) === 'true'
 
   const watched = countWatchedInSeason(season.season_number, season.episode_count)
   const allWatched = watched === season.episode_count && season.episode_count > 0
@@ -135,7 +140,7 @@ function SeasonRow({
       (_, i) => i + 1
     ).filter(n => !isWatched(season.season_number, n))
 
-    if (prevUnwatched.length > 0) {
+    if (prevUnwatched.length > 0 && !neverAsk) {
       setPending({ season: season.season_number, episode: ep.episode_number, prevUnwatched })
     } else {
       await toggleEpisode(season.season_number, ep.episode_number)
@@ -155,13 +160,20 @@ function SeasonRow({
     setPending(null)
   }
 
+  async function handleNever() {
+    if (!pending) return
+    localStorage.setItem(neverAskKey, 'true')
+    await toggleEpisode(pending.season, pending.episode)
+    setPending(null)
+  }
+
   return (
     <>
       {pending && (
         <ConfirmPreviousModal
-          pending={pending}
           onMarkAll={handleMarkAll}
           onJustThis={handleJustThis}
+          onNever={handleNever}
         />
       )}
 
