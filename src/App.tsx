@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginPage } from './components/LoginPage'
 import { Search } from './pages/Search'
-import { Library } from './pages/Library'
+import { Series } from './pages/Series'
+import { Movies } from './pages/Movies'
 import { Profile } from './pages/Profile'
 import { SeriesDetail } from './pages/SeriesDetail'
 import { BottomNav } from './components/BottomNav'
@@ -33,7 +34,8 @@ function AppContent() {
 
       <Routes>
         <Route path="/" element={<Search />} />
-        <Route path="/library" element={<Library />} />
+        <Route path="/tv" element={<Series />} />
+        <Route path="/movies" element={<Movies />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/series/:id" element={<SeriesDetail />} />
       </Routes>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl } from '../lib/tmdb'
 import { useEpisodes } from '../hooks/useEpisodes'
+import { useLibrary } from '../hooks/useLibrary'
 
 interface Episode {
   id: number
@@ -94,9 +95,11 @@ function ConfirmPreviousModal({
 function SeasonRow({
   seriesId,
   season,
+  onEpisodeWatched,
 }: {
   seriesId: number
   season: Season
+  onEpisodeWatched: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [episodes, setEpisodes] = useState<Episode[]>([])
@@ -125,6 +128,7 @@ function SeasonRow({
       ? episodes.map(e => e.episode_number)
       : Array.from({ length: season.episode_count }, (_, i) => i + 1)
     await markSeason(season.season_number, eps, !allWatched)
+    if (!allWatched) onEpisodeWatched()
   }
 
   async function handleEpisodeTap(ep: Episode) {
@@ -144,6 +148,7 @@ function SeasonRow({
       setPending({ season: season.season_number, episode: ep.episode_number, prevUnwatched })
     } else {
       await toggleEpisode(season.season_number, ep.episode_number)
+      onEpisodeWatched()
     }
   }
 
@@ -152,12 +157,14 @@ function SeasonRow({
     const all = [...pending.prevUnwatched, pending.episode]
     await markSeason(pending.season, all, true)
     setPending(null)
+    onEpisodeWatched()
   }
 
   async function handleJustThis() {
     if (!pending) return
     await toggleEpisode(pending.season, pending.episode)
     setPending(null)
+    onEpisodeWatched()
   }
 
   async function handleNever() {
@@ -165,6 +172,7 @@ function SeasonRow({
     localStorage.setItem(neverAskKey, 'true')
     await toggleEpisode(pending.season, pending.episode)
     setPending(null)
+    onEpisodeWatched()
   }
 
   return (
@@ -274,8 +282,25 @@ export function SeriesDetail() {
   const [series, setSeries] = useState<Series | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'sobre' | 'episodios'>('episodios')
+  const { saveItem, getItem } = useLibrary()
 
   const seriesId = Number(id)
+
+  function handleEpisodeWatched() {
+    if (!series) return
+    const existing = getItem(series.id, 'tv')
+    if (!existing) {
+      saveItem({
+        id: series.id,
+        type: 'tv',
+        title: series.name,
+        poster: series.poster_path,
+        status: 'watching',
+        rating: 0,
+        addedAt: Date.now(),
+      })
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -361,7 +386,7 @@ export function SeriesDetail() {
           {seasons.length === 0
             ? <p className="text-[#555] text-sm px-4 py-6">Nenhuma temporada disponível.</p>
             : seasons.map(season => (
-                <SeasonRow key={season.id} seriesId={seriesId} season={season} />
+                <SeasonRow key={season.id} seriesId={seriesId} season={season} onEpisodeWatched={handleEpisodeWatched} />
               ))
           }
         </div>
