@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginPage } from './components/LoginPage'
 import { Search } from './pages/Search'
@@ -7,11 +7,21 @@ import { Movies } from './pages/Movies'
 import { Profile } from './pages/Profile'
 import { SeriesDetail } from './pages/SeriesDetail'
 import { BottomNav } from './components/BottomNav'
+import { useEffect, useRef } from 'react'
 
 function AppContent() {
   const { user, loading } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const isDetail = location.pathname.startsWith('/series/')
+  const prevUser = useRef(user)
+
+  useEffect(() => {
+    if (!prevUser.current && user) {
+      navigate('/', { replace: true })
+    }
+    prevUser.current = user
+  }, [user])
 
   if (loading) {
     return (
