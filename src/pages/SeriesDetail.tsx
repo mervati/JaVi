@@ -31,6 +31,7 @@ interface Series {
   status: string
   seasons: Season[]
   number_of_seasons: number
+  genres: { id: number; name: string }[]
 }
 
 interface PendingEp {
@@ -374,6 +375,15 @@ export function SeriesDetail() {
 
       {tab === 'sobre' && (
         <div className="px-4 py-5">
+          {series.genres?.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px', marginBottom: '16px' }}>
+              {series.genres.map(g => (
+                <span key={g.id} style={{ padding: '4px 10px', borderRadius: '999px', background: '#f5b730', color: '#000', fontSize: '11px', fontWeight: 'bold' }}>
+                  {g.name}
+                </span>
+              ))}
+            </div>
+          )}
           {series.overview
             ? <p className="text-[#aaa] text-sm leading-relaxed">{series.overview}</p>
             : <p className="text-[#555] text-sm">Sem sinopse disponível.</p>

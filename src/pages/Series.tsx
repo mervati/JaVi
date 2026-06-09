@@ -22,10 +22,7 @@ export function Series() {
             <p className="text-white font-bold mb-1">Nenhuma série ainda</p>
             <p className="text-[#555] text-sm">Marque um episódio como assistido e a série aparece aqui automaticamente</p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-[#f5b730] text-black font-bold text-sm px-6 py-3 rounded-full uppercase tracking-wide"
-          >
+          <button onClick={() => navigate('/explorar')} className="boton-elegante">
             Explorar séries
           </button>
         </div>

@@ -16,7 +16,7 @@ export function LoginPage() {
       <div className="w-full max-w-xs flex flex-col gap-3">
         <button
           onClick={login}
-          className="w-full flex items-center justify-center gap-3 bg-white text-[#111] font-semibold px-6 py-4 rounded-xl text-base active:scale-95 transition-transform"
+          className="boton-elegante w-full flex items-center justify-center gap-3"
         >
           <img src="https://www.google.com/favicon.ico" alt="" className="w-5 h-5" />
           Entrar com Google

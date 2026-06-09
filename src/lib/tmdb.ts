@@ -45,6 +45,30 @@ export async function getSeasonEpisodes(seriesId: number, seasonNumber: number) 
   return res.json()
 }
 
+export async function getTrending(timeWindow: 'day' | 'week') {
+  const res = await fetch(`${BASE_URL}/trending/all/${timeWindow}?language=pt-BR`, { headers })
+  const data = await res.json()
+  return data.results ?? []
+}
+
+export async function getTopRated(type: 'movie' | 'tv') {
+  const res = await fetch(`${BASE_URL}/${type}/top_rated?language=pt-BR&page=1`, { headers })
+  const data = await res.json()
+  return data.results ?? []
+}
+
+export async function getAiringToday() {
+  const res = await fetch(`${BASE_URL}/tv/airing_today?language=pt-BR&page=1`, { headers })
+  const data = await res.json()
+  return data.results ?? []
+}
+
+export async function getVideos(id: number, type: 'movie' | 'tv') {
+  const res = await fetch(`${BASE_URL}/${type}/${id}/videos?language=en-US`, { headers })
+  const data = await res.json()
+  return data.results ?? []
+}
+
 export function getPosterUrl(path: string | null) {
   if (!path) return null
   return `https://image.tmdb.org/t/p/w500${path}`

@@ -17,10 +17,7 @@ export function Movies() {
             <p className="text-white font-bold mb-1">Nenhum filme ainda</p>
             <p className="text-[#555] text-sm">Marque um filme como assistido e ele aparece aqui automaticamente</p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-[#f5b730] text-black font-bold text-sm px-6 py-3 rounded-full uppercase tracking-wide"
-          >
+          <button onClick={() => navigate('/explorar')} className="boton-elegante">
             Explorar filmes
           </button>
         </div>

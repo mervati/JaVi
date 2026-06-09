@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginPage } from './components/LoginPage'
+import { Home } from './pages/Home'
 import { Search } from './pages/Search'
 import { Series } from './pages/Series'
 import { Movies } from './pages/Movies'
 import { Profile } from './pages/Profile'
 import { SeriesDetail } from './pages/SeriesDetail'
+import { MovieDetail } from './pages/MovieDetail'
 import { BottomNav } from './components/BottomNav'
 import { useEffect, useRef } from 'react'
 
@@ -13,7 +15,7 @@ function AppContent() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const isDetail = location.pathname.startsWith('/series/')
+  const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
 
   useEffect(() => {
@@ -43,11 +45,13 @@ function AppContent() {
       )}
 
       <Routes>
-        <Route path="/" element={<Search />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/explorar" element={<Search />} />
         <Route path="/tv" element={<Series />} />
         <Route path="/movies" element={<Movies />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/series/:id" element={<SeriesDetail />} />
+        <Route path="/movie/:id" element={<MovieDetail />} />
       </Routes>
 
       {!isDetail && <BottomNav />}
