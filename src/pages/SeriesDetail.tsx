@@ -52,28 +52,37 @@ function ConfirmPreviousModal({
   const range = first === last ? `episódio ${first}` : `episódios ${first} a ${last}`
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onJustThis} />
-      <div className="relative w-full bg-[#1a1a1a] rounded-t-2xl px-5 py-6 flex flex-col gap-4">
-        <div className="w-10 h-1 bg-[#333] rounded-full mx-auto mb-1" />
-        <p className="text-white font-bold text-base text-center">
-          Marcar episódios anteriores?
-        </p>
-        <p className="text-[#888] text-sm text-center leading-relaxed">
-          Você também assistiu os {range} da Temporada {pending.season}?
-        </p>
-        <button
-          onClick={onMarkAll}
-          className="w-full bg-[#5cb85c] text-white font-bold py-4 rounded-xl text-sm"
-        >
-          Sim, marcar {range} também
-        </button>
-        <button
-          onClick={onJustThis}
-          className="w-full border border-[#333] text-[#aaa] font-medium py-4 rounded-xl text-sm"
-        >
-          Não, só o episódio {pending.episode}
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+      <div className="absolute inset-0 bg-black/80" onClick={onJustThis} />
+      <div className="relative w-full max-w-sm bg-[#1e1e1e] rounded-2xl px-6 py-8 flex flex-col gap-5 shadow-2xl">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-14 h-14 bg-[#5cb85c]/15 rounded-full flex items-center justify-center">
+            <svg className="w-7 h-7 text-[#5cb85c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-white font-bold text-lg text-center leading-snug">
+            Marcar episódios anteriores?
+          </p>
+          <p className="text-[#888] text-sm text-center leading-relaxed">
+            Você também assistiu os {range} da Temporada {pending.season}?
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 mt-1">
+          <button
+            onClick={onMarkAll}
+            className="w-full bg-[#5cb85c] text-white font-bold py-5 rounded-2xl text-base active:scale-95 transition-transform"
+          >
+            Sim, marcar {range} também
+          </button>
+          <button
+            onClick={onJustThis}
+            className="w-full bg-[#2a2a2a] text-[#ccc] font-semibold py-5 rounded-2xl text-base active:scale-95 transition-transform"
+          >
+            Não, só o episódio {pending.episode}
+          </button>
+        </div>
       </div>
     </div>
   )
