@@ -15,4 +15,5 @@ body {
 
 #root {
   min-height: 100svh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
