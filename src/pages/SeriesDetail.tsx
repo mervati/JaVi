@@ -178,10 +178,10 @@ function SeasonRow({
       )}
 
       <div className="border-b border-[#1a1a1a]">
-        <div className="px-4 py-3">
+        <div className="px-5 py-4">
           <div className="flex items-center justify-between mb-2">
             <button onClick={handleOpen} className="flex items-center gap-2 flex-1 text-left">
-              <span className="text-white font-bold text-sm">{season.name}</span>
+              <span className="text-white font-bold text-base">{season.name}</span>
               <svg
                 className={`w-4 h-4 text-[#555] transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -223,7 +223,7 @@ function SeasonRow({
               </div>
             ) : (
               episodes.map(ep => (
-                <div key={ep.id} className="flex items-center gap-3 px-4 py-2.5 border-t border-[#111]">
+                <div key={ep.id} className="flex items-center gap-3 px-5 py-3 border-t border-[#111]">
                   <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
                     {ep.still_path
                       ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
@@ -236,11 +236,11 @@ function SeasonRow({
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#888] text-[11px] font-bold">
+                    <p className="text-[#888] text-xs font-bold">
                       T{String(season.season_number).padStart(2, '0')} | E{String(ep.episode_number).padStart(2, '0')}
                     </p>
-                    <p className="text-white text-sm font-medium leading-tight line-clamp-1">{ep.name}</p>
-                    {ep.runtime && <p className="text-[#555] text-[11px] mt-0.5">{ep.runtime} min</p>}
+                    <p className="text-white text-base font-medium leading-tight line-clamp-1">{ep.name}</p>
+                    {ep.runtime && <p className="text-[#555] text-xs mt-0.5">{ep.runtime} min</p>}
                   </div>
 
                   <button
