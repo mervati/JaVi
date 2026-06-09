@@ -32,7 +32,30 @@ export async function getDetails(id: number, type: 'movie' | 'tv') {
   return res.json()
 }
 
+export async function getSeriesDetails(id: number) {
+  const res = await fetch(`${BASE_URL}/tv/${id}?language=pt-BR`, { headers })
+  return res.json()
+}
+
+export async function getSeasonEpisodes(seriesId: number, seasonNumber: number) {
+  const res = await fetch(
+    `${BASE_URL}/tv/${seriesId}/season/${seasonNumber}?language=pt-BR`,
+    { headers }
+  )
+  return res.json()
+}
+
 export function getPosterUrl(path: string | null) {
   if (!path) return null
   return `https://image.tmdb.org/t/p/w500${path}`
+}
+
+export function getBackdropUrl(path: string | null) {
+  if (!path) return null
+  return `https://image.tmdb.org/t/p/w780${path}`
+}
+
+export function getThumbUrl(path: string | null) {
+  if (!path) return null
+  return `https://image.tmdb.org/t/p/w185${path}`
 }

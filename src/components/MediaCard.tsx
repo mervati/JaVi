@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getPosterUrl, getWatchProviders } from '../lib/tmdb'
 import { useLibrary, type LibraryItem } from '../hooks/useLibrary'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,6 +19,7 @@ interface Props {
 
 export function MediaCard({ media }: Props) {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { saveItem, removeItem, getItem } = useLibrary()
   const [expanded, setExpanded] = useState(false)
   const [providers, setProviders] = useState<{ link: string; flatrate?: { logo_path: string; provider_name: string }[] } | null>(null)
@@ -51,6 +53,14 @@ export function MediaCard({ media }: Props) {
     await saveItem(newItem)
   }
 
+  function handleRowTap() {
+    if (media.media_type === 'tv') {
+      navigate(`/series/${media.id}`)
+      return
+    }
+    toggleExpanded()
+  }
+
   async function toggleExpanded() {
     if (!expanded && !providers) {
       const data = await getWatchProviders(media.id, media.media_type)
@@ -61,7 +71,7 @@ export function MediaCard({ media }: Props) {
 
   return (
     <div className="border-b border-[#1a1a1a]">
-      <div className="flex items-center gap-3 px-4 py-3 active:bg-[#111] transition-colors" onClick={toggleExpanded}>
+      <div className="flex items-center gap-3 px-4 py-3 active:bg-[#111] transition-colors" onClick={handleRowTap}>
         <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
           {poster
             ? <img src={poster} alt={title} className="w-full h-full object-cover" />

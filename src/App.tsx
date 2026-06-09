@@ -1,13 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginPage } from './components/LoginPage'
 import { Search } from './pages/Search'
 import { Library } from './pages/Library'
 import { Profile } from './pages/Profile'
+import { SeriesDetail } from './pages/SeriesDetail'
 import { BottomNav } from './components/BottomNav'
 
 function AppContent() {
   const { user, loading } = useAuth()
+  const location = useLocation()
+  const isDetail = location.pathname.startsWith('/series/')
 
   if (loading) {
     return (
@@ -20,19 +23,22 @@ function AppContent() {
   if (!user) return <LoginPage />
 
   return (
-    <div className="pb-20">
-      <header className="flex items-center justify-between px-4 h-[53px] bg-[#0a0a0a] border-b border-[#1a1a1a] sticky top-0 z-40">
-        <span className="text-white font-black text-xl tracking-tight">JáVi</span>
-        <div className="w-2 h-2 rounded-full bg-[#f5b730]" />
-      </header>
+    <div className={isDetail ? '' : 'pb-20'}>
+      {!isDetail && (
+        <header className="flex items-center justify-between px-4 h-[53px] bg-[#0a0a0a] border-b border-[#1a1a1a] sticky top-0 z-40">
+          <span className="text-white font-black text-xl tracking-tight">JáVi</span>
+          <div className="w-2 h-2 rounded-full bg-[#f5b730]" />
+        </header>
+      )}
 
       <Routes>
         <Route path="/" element={<Search />} />
         <Route path="/library" element={<Library />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/series/:id" element={<SeriesDetail />} />
       </Routes>
 
-      <BottomNav />
+      {!isDetail && <BottomNav />}
     </div>
   )
 }
