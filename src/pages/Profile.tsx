@@ -5,6 +5,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl, getDetails, getSeriesDetails } from '../lib/tmdb'
 import { db } from '../lib/firebase'
+import {
+  isPushSupported,
+  isPushSubscribed,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from '../lib/pushNotifications'
 import type { LibraryItem } from '../hooks/useLibrary'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -163,6 +169,24 @@ export function Profile() {
   const { user, logout } = useAuth()
   const { items } = useLibrary()
   const navigate = useNavigate()
+
+  const pushSupported = isPushSupported()
+  const [pushEnabled, setPushEnabled] = useState(false)
+  useEffect(() => {
+    if (!pushSupported) return
+    isPushSubscribed().then(setPushEnabled)
+  }, [pushSupported])
+
+  async function handlePushToggle() {
+    if (!user) return
+    if (pushEnabled) {
+      await unsubscribeFromPush(user.uid)
+      setPushEnabled(false)
+    } else {
+      const ok = await subscribeToPush(user.uid)
+      if (ok) setPushEnabled(true)
+    }
+  }
 
   const watched   = items.filter(i => i.status === 'watched')
   const watchlist = items.filter(i => i.status === 'watchlist')
@@ -366,6 +390,47 @@ export function Profile() {
           ))}
         </div>
       </div>
+
+      {/* toggle de notificações push */}
+      {pushSupported && (
+        <div className="px-4" style={{ paddingTop: '24px' }}>
+          <button
+            onClick={handlePushToggle}
+            className="rounded-2xl w-full flex items-center justify-between active:opacity-70"
+            style={{ background: '#111', border: '1px solid #222', padding: '16px 20px' }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🔔</span>
+              <div className="text-left">
+                <p className="text-white text-sm font-bold">Notificações</p>
+                <p className="text-[10px] font-medium" style={{ color: '#555' }}>
+                  Avisar quando um novo episódio for ao ar
+                </p>
+              </div>
+            </div>
+            <div
+              className="flex items-center rounded-full flex-shrink-0"
+              style={{
+                width: '44px',
+                height: '24px',
+                background: pushEnabled ? '#f5b730' : '#333',
+                padding: '2px',
+                transition: 'background 0.2s',
+              }}
+            >
+              <div
+                className="rounded-full bg-white"
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  transform: pushEnabled ? 'translateX(20px)' : 'translateX(0)',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* botão sair */}
       <div className="px-4" style={{ paddingTop: '24px', paddingBottom: '16px' }}>
