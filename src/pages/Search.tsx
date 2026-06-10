@@ -22,8 +22,8 @@ export function Search() {
   }
 
   return (
-    <div className="flex flex-col" style={{ minHeight: 'calc(100svh - 53px - 70px)' }}>
-      <div className="sticky top-[53px] bg-[#0a0a0a] z-30">
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 bg-[#0a0a0a] z-30">
         <SearchBar onSearch={handleSearch} onClear={handleClear} />
         {searched && !loading && results.length > 0 && (
           <div className="flex border-b border-[#1a1a1a]">

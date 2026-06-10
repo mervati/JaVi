@@ -17,6 +17,7 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
   const { saveItem, removeItem } = useLibrary()
   const [offsetX, setOffsetX] = useState(0)
   const [confirm, setConfirm] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const startXRef = useRef(0)
   const dragging = useRef(false)
   const THRESHOLD_LEFT = -70
@@ -57,6 +58,33 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
 
   return (
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
+      {/* modal confirmação de exclusão */}
+      {confirmDelete && (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+          style={{ background: 'rgba(10,10,10,0.97)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <p className="text-white text-sm font-bold text-center px-4">Remover "{item.title}" da biblioteca?</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-5 py-2 rounded-xl text-sm font-bold"
+              style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #333' }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => { removeItem(item.id, item.type); setConfirmDelete(false) }}
+              className="px-5 py-2 rounded-xl text-sm font-bold"
+              style={{ background: '#e05555', color: '#fff' }}
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* modal de confirmação — fora da camada com opacity */}
       {confirm && (
         <div
@@ -86,19 +114,22 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
 
       {/* conteúdo com opacity quando assistido/abandonado */}
       <div style={isCompleted ? { opacity: 0.4 } : {}}>
-        {/* fundo esquerdo: abandonar */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 flex items-center justify-center bg-[#1a6ef5]">
-          <FaEyeSlash className="text-white text-2xl" />
-        </div>
-        {/* fundo direito: assistido */}
-        <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${isWatched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
-          {isWatched ? <FaEyeSlash className="text-white text-2xl" /> : <FaEye className="text-white text-2xl" />}
-        </div>
+        {/* fundos de swipe — ocultos para itens concluídos */}
+        {!isCompleted && (
+          <>
+            <div className="absolute left-0 top-0 bottom-0 w-20 flex items-center justify-center bg-[#1a6ef5]">
+              <FaEyeSlash className="text-white text-2xl" />
+            </div>
+            <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${isWatched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
+              {isWatched ? <FaEyeSlash className="text-white text-2xl" /> : <FaEye className="text-white text-2xl" />}
+            </div>
+          </>
+        )}
 
         <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+          onTouchStart={isCompleted ? undefined : onTouchStart}
+          onTouchMove={isCompleted ? undefined : onTouchMove}
+          onTouchEnd={isCompleted ? undefined : onTouchEnd}
           onClick={() => navigate(`/movie/${item.id}`)}
           style={{
             transform: `translateX(${offsetX}px)`,
@@ -133,7 +164,7 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
           </div>
 
           <button
-            onClick={e => { e.stopPropagation(); removeItem(item.id, item.type) }}
+            onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
             className="p-2 text-[#333] flex-shrink-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

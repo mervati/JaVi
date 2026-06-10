@@ -54,7 +54,7 @@ function AppContent() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explorar" element={<Search />} />

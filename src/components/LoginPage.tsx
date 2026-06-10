@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, loginError } = useAuth()
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-10 px-6">
@@ -18,6 +18,11 @@ export function LoginPage() {
           <img src="https://www.google.com/favicon.ico" alt="" className="w-5 h-5" />
           Entrar com Google
         </button>
+        {loginError && (
+          <p className="text-[#e05555] text-xs text-center px-2 leading-relaxed">
+            {loginError}
+          </p>
+        )}
       </div>
 
       <p className="text-[#444] text-xs text-center px-8">
