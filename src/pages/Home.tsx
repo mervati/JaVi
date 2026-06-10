@@ -230,16 +230,15 @@ function AvaliadosTab() {
 
   return (
     <div>
-      <div className="flex gap-2 px-5 py-3 border-b border-[#1a1a1a]">
-        {(['movie', 'tv'] as RatingType[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setType(t)}
-            className={`boton-elegante boton-sm ${type === t ? 'boton-active' : ''}`}
-          >
-            {t === 'movie' ? 'Filmes' : 'Séries'}
-          </button>
-        ))}
+      <div className="flex px-5 py-4 border-b border-[#1a1a1a]">
+        <PillTabs
+          options={[
+            { value: 'movie' as RatingType, label: 'Filmes' },
+            { value: 'tv'    as RatingType, label: 'Séries' },
+          ]}
+          value={type}
+          onChange={setType}
+        />
       </div>
       {loading ? <LoadingList /> : items.map((item, i) => (
         <div key={item.id} className="relative">
