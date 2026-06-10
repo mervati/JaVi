@@ -4,6 +4,7 @@ import { useLibrary } from '../hooks/useLibrary'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { getSeriesDetails, getSeasonEpisodes, getPosterUrl } from '../lib/tmdb'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import { StarRating } from '../components/StarRating'
 import type { LibraryItem } from '../hooks/useLibrary'
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -177,12 +178,84 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
   )
 }
 
-export function Series() {
-  const { items, removeItem } = useLibrary()
+function SeriesRow({ item }: { item: LibraryItem }) {
   const navigate = useNavigate()
+  const { saveItem, removeItem } = useLibrary()
+  const [confirm, setConfirm] = useState(false)
+  const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.watching
+  const isCompleted = item.status === 'abandoned' || item.status === 'watched'
+
+  return (
+    <div className="relative overflow-hidden border-b border-[#1a1a1a]">
+      {confirm && (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+          style={{ background: 'rgba(10,10,10,0.97)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <p className="text-white text-sm font-bold text-center px-4">Remover "{item.title}" da biblioteca?</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirm(false)}
+              className="px-5 py-2 rounded-xl text-sm font-bold"
+              style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #333' }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => { removeItem(item.id, item.type); setConfirm(false) }}
+              className="px-5 py-2 rounded-xl text-sm font-bold"
+              style={{ background: '#e05555', color: '#fff' }}
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={isCompleted ? { opacity: 0.4 } : {}}>
+        <div
+          className="flex items-center gap-3 active:bg-[#111] transition-colors"
+          style={{ padding: '12px 20px' }}
+          onClick={() => navigate(`/series/${item.id}`)}
+        >
+          <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
+            {item.poster
+              ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" style={isCompleted ? { filter: 'grayscale(1)' } : {}} />
+              : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-base leading-tight mb-2">{item.title}</p>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${status.color}`}>
+              {status.label}
+            </span>
+            {isCompleted && (
+              <div className="mt-1" onClick={e => e.stopPropagation()}>
+                <StarRating size="sm" value={item.rating} onChange={rating => saveItem({ ...item, rating })} />
+              </div>
+            )}
+          </div>
+          <button
+            onClick={e => { e.stopPropagation(); setConfirm(true) }}
+            className="p-2 text-[#333] flex-shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function Series() {
+  const { items } = useLibrary()
+  const navigate  = useNavigate()
   const series = items.filter(i => i.type === 'tv')
   const watching = series.filter(i => i.status === 'watching')
-  const others = series.filter(i => i.status !== 'watching')
+  const others   = series.filter(i => i.status !== 'watching')
 
   if (series.length === 0) {
     return (
@@ -227,41 +300,10 @@ export function Series() {
               </span>
             </div>
           )}
-          {others.map(item => {
-            const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.watching
-            const isAbandoned = item.status === 'abandoned' || item.status === 'watched'
-            return (
-              <div
-                key={`${item.type}-${item.id}`}
-                className={`flex items-center gap-3 border-b border-[#1a1a1a] active:bg-[#111] transition-colors ${isAbandoned ? 'opacity-40' : ''}`}
-                style={{ padding: '12px 20px' }}
-                onClick={() => navigate(`/series/${item.id}`)}
-              >
-                <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-                  {item.poster
-                    ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover grayscale" style={isAbandoned ? {} : { filter: 'none' }} />
-                    : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                  }
-                </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-base leading-tight mb-2">{item.title}</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${status.color}`}>
-                    {status.label}
-                  </span>
-                </div>
-
-                <button
-                  onClick={e => { e.stopPropagation(); removeItem(item.id, item.type) }}
-                  className="p-2 text-[#333] hover:text-[#888] transition-colors flex-shrink-0"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )
-          })}
+          {others.map(item => (
+            <SeriesRow key={`${item.type}-${item.id}`} item={item} />
+          ))}
         </div>
       )}
     </div>
