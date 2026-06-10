@@ -348,7 +348,7 @@ function CalendarioTab() {
         <div key={date} style={{ marginBottom: '8px' }}>
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
             <span className="text-[#f5b730] font-bold text-sm">{formatDateHeader(date)}</span>
-            <span className="text-[#333] text-xs">
+            <span className="text-white text-xs">
               {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
             </span>
           </div>
