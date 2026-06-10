@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { fireSeriesConfetti } from '../lib/confetti'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar } from '../lib/tmdb'
 import { PosterImage } from '../components/PosterImage'
@@ -197,10 +198,24 @@ function SeasonRow({
   const { isWatched, toggleEpisode, markSeason, countWatchedInSeason } = useEpisodes(seriesId)
   const neverAskKey = `javi_noask_${seriesId}`
   const neverAsk = localStorage.getItem(neverAskKey) === 'true'
+  const epRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => { if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current) }
+  }, [])
 
   const watched = countWatchedInSeason(season.season_number, season.episode_count)
   const allWatched = watched === season.episode_count && season.episode_count > 0
   const progress = season.episode_count > 0 ? (watched / season.episode_count) * 100 : 0
+
+  function scheduleScrollToNext(epIdx: number) {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+    scrollTimerRef.current = setTimeout(() => {
+      epRefs.current.get(epIdx + 1)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      scrollTimerRef.current = null
+    }, 1000)
+  }
 
   async function handleOpen() {
     if (!open && episodes.length === 0) {
@@ -246,30 +261,37 @@ function SeasonRow({
     } else {
       await toggleEpisode(season.season_number, episodeIdx)
       onEpisodeWatched()
+      scheduleScrollToNext(episodeIdx)
     }
   }
 
   async function handleMarkAll() {
     if (!pending) return
     const all = [...pending.prevUnwatched, pending.episode]
+    const lastIdx = pending.episode
     await markSeason(pending.season, all, true)
     setPending(null)
     onEpisodeWatched()
+    scheduleScrollToNext(lastIdx)
   }
 
   async function handleJustThis() {
     if (!pending) return
+    const epIdx = pending.episode
     await toggleEpisode(pending.season, pending.episode)
     setPending(null)
     onEpisodeWatched()
+    scheduleScrollToNext(epIdx)
   }
 
   async function handleNever() {
     if (!pending) return
     localStorage.setItem(neverAskKey, 'true')
+    const epIdx = pending.episode
     await toggleEpisode(pending.season, pending.episode)
     setPending(null)
     onEpisodeWatched()
+    scheduleScrollToNext(epIdx)
   }
 
   return (
@@ -319,13 +341,14 @@ function SeasonRow({
               </div>
             ) : (
               episodes.map((ep, idx) => (
-                <SwipeableEpisode
-                  key={ep.id}
-                  ep={ep}
-                  seasonNumber={season.season_number}
-                  watched={isWatched(season.season_number, idx + 1)}
-                  onTap={() => handleEpisodeTap(ep, idx + 1)}
-                />
+                <div key={ep.id} ref={el => { if (el) epRefs.current.set(idx + 1, el); else epRefs.current.delete(idx + 1) }}>
+                  <SwipeableEpisode
+                    ep={ep}
+                    seasonNumber={season.season_number}
+                    watched={isWatched(season.season_number, idx + 1)}
+                    onTap={() => handleEpisodeTap(ep, idx + 1)}
+                  />
+                </div>
               ))
             )}
           </div>
@@ -333,6 +356,17 @@ function SeasonRow({
       </div>
     </>
   )
+}
+
+function fireSeriesConfetti() {
+  const colors = ['#f5b730', '#ffffff', '#5cb85c', '#4a9eff', '#ff6b6b']
+  const end = Date.now() + 2500
+
+  ;(function frame() {
+    confetti({ particleCount: 4, angle: 60, spread: 70, origin: { x: 0, y: 0.65 }, colors })
+    confetti({ particleCount: 4, angle: 120, spread: 70, origin: { x: 1, y: 0.65 }, colors })
+    if (Date.now() < end) requestAnimationFrame(frame)
+  })()
 }
 
 export function SeriesDetail() {
@@ -349,6 +383,7 @@ export function SeriesDetail() {
 
   const seriesId = Number(id)
   const { countWatchedInSeason, watchedCount } = useEpisodes(seriesId)
+  const prevAllComplete = useRef<boolean | null>(null)
 
   function handleEpisodeWatched() {
     if (!series) return
@@ -375,6 +410,12 @@ export function SeriesDetail() {
     const allComplete = seasons.every(s =>
       countWatchedInSeason(s.season_number, s.episode_count) === s.episode_count
     )
+
+    if (allComplete && prevAllComplete.current === false) {
+      fireSeriesConfetti()
+    }
+    prevAllComplete.current = allComplete
+
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
       saveItem({ ...existing, status: newStatus })

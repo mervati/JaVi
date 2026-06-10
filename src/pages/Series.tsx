@@ -53,6 +53,8 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
   const [seasons, setSeasons] = useState<any[]>([])
   const [ready, setReady] = useState(false)
   const seasonCache = useRef<Record<number, any[]>>({})
+  const [frozenNextEp, setFrozenNextEp] = useState<NextEp | null>(null)
+  const frozenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isWatchedRef = useRef(isWatched)
   isWatchedRef.current = isWatched
 
@@ -106,7 +108,11 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
           }
         }
       }
-      if (!cancelled) { setReady(true); setNextEp(null) }
+      if (!cancelled) {
+        setReady(true)
+        setNextEp(null)
+        if (item.status !== 'watched') saveItem({ ...item, status: 'watched' })
+      }
     }
 
     run().catch(() => { if (!cancelled) setReady(true) })
@@ -134,23 +140,36 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
     else setOffsetX(Math.min(dx, MAX_SWIPE_RIGHT))
   }
 
+  useEffect(() => {
+    return () => { if (frozenTimerRef.current) clearTimeout(frozenTimerRef.current) }
+  }, [])
+
   async function handleMarkEpisode(wasWatched: boolean) {
-    if (!nextEp) return
-    await toggleEpisode(nextEp.season, nextEp.episode)
+    if (!nextEp || frozenNextEp) return
     if (!wasWatched) {
-      saveItem({ ...item, lastWatchedAt: Date.now() })
+      const snap = nextEp
+      setFrozenNextEp(snap)
+      if (frozenTimerRef.current) clearTimeout(frozenTimerRef.current)
+      frozenTimerRef.current = setTimeout(() => {
+        setFrozenNextEp(null)
+        frozenTimerRef.current = null
+      }, 1000)
     }
+    await toggleEpisode(nextEp.season, nextEp.episode)
+    if (!wasWatched) saveItem({ ...item, lastWatchedAt: Date.now() })
   }
 
   async function onTouchEnd() {
     dragging.current = false
-    if (offsetX <= THRESHOLD_LEFT && nextEp) {
+    if (offsetX <= THRESHOLD_LEFT && nextEp && !frozenNextEp) {
       await handleMarkEpisode(false)
     } else if (offsetX >= THRESHOLD_RIGHT) {
       await saveItem({ ...item, status: 'abandoned' })
     }
     setOffsetX(0)
   }
+
+  const displayEp = frozenNextEp ?? nextEp
 
   if (!ready) {
     return (
@@ -165,9 +184,10 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
     )
   }
 
-  if (!nextEp) return null
+  if (!displayEp) return null
 
-  const epWatched = isWatched(nextEp.season, nextEp.episode)
+  const epWatched = isWatched(displayEp.season, displayEp.episode)
+  const showChecked = frozenNextEp != null ? true : epWatched
 
   return (
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
@@ -176,8 +196,8 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
         <FaEyeSlash className="text-white text-2xl" />
       </div>
       {/* fundo direito: marcar episódio (swipe esquerdo) */}
-      <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${epWatched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
-        {epWatched ? <FaEyeSlash className="text-white text-2xl" /> : <FaEye className="text-white text-2xl" />}
+      <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${showChecked ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
+        {showChecked ? <FaEyeSlash className="text-white text-2xl" /> : <FaEye className="text-white text-2xl" />}
       </div>
 
       <div
@@ -214,7 +234,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
               <>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-white text-sm font-black">
-                    T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
+                    T{String(displayEp.season).padStart(2, '0')} | E{String(displayEp.displayNumber ?? displayEp.episode).padStart(2, '0')}
                   </span>
                   {remaining > 0 && (
                     <span style={{ color: '#fff', fontSize: '11px', fontWeight: 500 }}>
@@ -222,14 +242,14 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
                     </span>
                   )}
                 </div>
-                <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{nextEp.name}</p>
+                <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{displayEp.name}</p>
                 <ProgressBar watched={watchedCount} total={total} />
               </>
             )
           })()}
         </div>
 
-        <EpisodeCheckbox checked={epWatched} onChange={() => handleMarkEpisode(epWatched)} size="sm" />
+        <EpisodeCheckbox checked={showChecked} onChange={() => handleMarkEpisode(epWatched)} size="sm" disabled={frozenNextEp != null} />
       </div>
     </div>
   )

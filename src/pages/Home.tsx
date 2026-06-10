@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getTrending, getTopRated, getAiringToday, getVideos, getPosterUrl, getRecommendations } from '../lib/tmdb'
+import { getTrending, getTopRated, getAiringToday, getVideos, getPosterUrl, getRecommendations, getSeriesDetails, getSeasonEpisodes } from '../lib/tmdb'
 import { useLibrary } from '../hooks/useLibrary'
+import type { LibraryItem } from '../hooks/useLibrary'
+import { useEpisodes } from '../hooks/useEpisodes'
 import { PillTabs } from '../components/PillTabs'
 import { PosterImage } from '../components/PosterImage'
 import { useRegisterRefresh } from '../contexts/RefreshContext'
@@ -391,6 +393,112 @@ function ParaVoceTab() {
   )
 }
 
+function ContinuarCard({ item }: { item: LibraryItem }) {
+  const navigate = useNavigate()
+  const { isWatched, watchedCount } = useEpisodes(item.id)
+  const [nextEp, setNextEp] = useState<{ season: number; episode: number; displayNumber?: number } | null>(null)
+  const [total, setTotal] = useState(0)
+  const [ready, setReady] = useState(false)
+  const seasonCache = useRef<Record<number, any[]>>({})
+  const isWatchedRef = useRef(isWatched)
+  isWatchedRef.current = isWatched
+
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        const data = await getSeriesDetails(item.id)
+        if (cancelled) return
+        const seasons = (data.seasons ?? []).filter((s: any) => s.season_number > 0 && s.episode_count > 0)
+        const t = seasons.reduce((sum: number, s: any) => sum + (s.episode_count ?? 0), 0)
+        if (!cancelled) setTotal(t)
+        const check = isWatchedRef.current
+        for (const season of seasons) {
+          const sn = season.season_number
+          let allWatched = true
+          for (let ep = 1; ep <= season.episode_count; ep++) {
+            if (!check(sn, ep)) { allWatched = false; break }
+          }
+          if (!allWatched) {
+            if (!seasonCache.current[sn]) {
+              const epData = await getSeasonEpisodes(item.id, sn)
+              if (cancelled) return
+              seasonCache.current[sn] = epData.episodes ?? []
+            }
+            const eps: any[] = seasonCache.current[sn]
+            for (let i = 0; i < eps.length; i++) {
+              if (!check(sn, i + 1)) {
+                if (!cancelled) {
+                  setNextEp({ season: sn, episode: i + 1, displayNumber: eps[i].episode_number })
+                  setReady(true)
+                }
+                return
+              }
+            }
+          }
+        }
+        if (!cancelled) setReady(true)
+      } catch {
+        if (!cancelled) setReady(true)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [item.id, watchedCount])
+
+  const pct = total > 0 ? Math.min(100, Math.round((watchedCount / total) * 100)) : 0
+
+  if (!ready) {
+    return <div className="flex-shrink-0 w-28 rounded-xl bg-[#1a1a1a] animate-pulse" style={{ height: '168px' }} />
+  }
+  if (!nextEp) return null
+
+  return (
+    <div
+      className="flex-shrink-0 w-28 relative rounded-xl overflow-hidden cursor-pointer active:opacity-70"
+      style={{ height: '168px' }}
+      onClick={() => navigate(`/series/${item.id}`)}
+    >
+      <div className="absolute inset-0">
+        <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+        <p className="text-white text-[10px] font-black leading-tight line-clamp-2 mb-0.5">{item.title}</p>
+        <p className="text-[#f5b730] text-[9px] font-bold">
+          T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
+        </p>
+        {pct > 0 && (
+          <div className="mt-1.5 h-0.5 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${pct}%`, background: pct === 100 ? '#5cb85c' : '#f5b730' }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ContinuarAssistindo() {
+  const { items } = useLibrary()
+  const watching = items
+    .filter(i => i.type === 'tv' && i.status === 'watching')
+    .sort((a, b) => (b.lastWatchedAt ?? b.addedAt ?? 0) - (a.lastWatchedAt ?? a.addedAt ?? 0))
+
+  if (watching.length === 0) return null
+
+  return (
+    <div style={{ borderBottom: '1px solid #1a1a1a', paddingTop: '16px', paddingBottom: '16px', marginBottom: '16px' }}>
+      <p className="text-[#f5b730] text-[10px] font-bold uppercase tracking-widest px-5 mb-3">Continuar assistindo</p>
+      <div className="flex gap-3 overflow-x-auto px-5" style={{ scrollbarWidth: 'none' }}>
+        {watching.map(item => <ContinuarCard key={item.id} item={item} />)}
+      </div>
+    </div>
+  )
+}
+
 const TABS: { key: MainTab; label: string }[] = [
   { key: 'paravoc',   label: 'Para você' },
   { key: 'feed',      label: 'Feed' },
@@ -419,6 +527,7 @@ export function Home() {
         ))}
       </div>
 
+      <ContinuarAssistindo />
       <div>
         {tab === 'paravoc'    && <ParaVoceTab   key={refreshKey} />}
         {tab === 'feed'       && <FeedTab        key={refreshKey} />}
