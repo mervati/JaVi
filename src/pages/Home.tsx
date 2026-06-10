@@ -174,7 +174,7 @@ function TendenciasTab() {
 
   return (
     <div>
-      <div className="flex flex-col items-center gap-3 px-5 py-4 border-b border-[#1a1a1a]">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]">
         <PillTabs
           options={[
             { value: 'day' as TrendWindow,  label: 'Hoje'   },
