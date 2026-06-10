@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useLibrary } from '../hooks/useLibrary'
 import { useEpisodes } from '../hooks/useEpisodes'
@@ -526,8 +527,8 @@ export function Series() {
             </div>
           )}
 
-          {/* bottom sheet de ordenação */}
-          {showSort && (
+          {/* bottom sheet de ordenação — portal para escapar do overflow:hidden do <main> */}
+          {showSort && createPortal(
             <>
               <div
                 className="fixed inset-0 z-40"
@@ -556,7 +557,8 @@ export function Series() {
                 ))}
                 <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }} />
               </div>
-            </>
+            </>,
+            document.body
           )}
         </>
       )}
