@@ -8,6 +8,30 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { StarRating } from '../components/StarRating'
 import type { LibraryItem } from '../hooks/useLibrary'
 
+function ProgressBar({ watched, total, status }: { watched: number; total: number; status?: string }) {
+  if (total === 0) return null
+  const pct = status === 'watched' && watched === 0
+    ? 100
+    : Math.min(100, Math.round((watched / total) * 100))
+  if (pct === 0) return null
+  return (
+    <div style={{ marginTop: '6px' }}>
+      <div style={{ height: '3px', background: '#1a1a1a', borderRadius: '999px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${pct}%`,
+          background: pct === 100 ? '#5cb85c' : '#f5b730',
+          borderRadius: '999px',
+          transition: 'width 0.4s ease',
+        }} />
+      </div>
+      <p style={{ color: '#444', fontSize: '10px', marginTop: '3px' }}>
+        {watched} / {total} ep. · {pct}%
+      </p>
+    </div>
+  )
+}
+
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   watching:  { label: 'Assistindo',  color: 'text-[#4a9eff] border-[#4a9eff]' },
   watchlist: { label: 'Quero ver',   color: 'text-[#f5b730] border-[#f5b730]' },
@@ -175,6 +199,10 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
             T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
           </p>
           <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{nextEp.name}</p>
+          {(() => {
+            const total = seasons.reduce((s: number, season: any) => s + (season.episode_count ?? 0), 0)
+            return <ProgressBar watched={watchedCount} total={total} />
+          })()}
         </div>
 
         <button
@@ -195,9 +223,18 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
 function SeriesRow({ item }: { item: LibraryItem }) {
   const navigate = useNavigate()
   const { saveItem, removeItem } = useLibrary()
+  const { watchedCount } = useEpisodes(item.id)
   const [confirm, setConfirm] = useState(false)
+  const [totalEpisodes, setTotalEpisodes] = useState(0)
   const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.watching
   const isCompleted = item.status === 'abandoned' || item.status === 'watched'
+
+  useEffect(() => {
+    if (item.status === 'watchlist') return
+    getSeriesDetails(item.id)
+      .then(d => setTotalEpisodes(d.number_of_episodes ?? 0))
+      .catch(() => {})
+  }, [item.id, item.status])
 
   return (
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
@@ -248,6 +285,9 @@ function SeriesRow({ item }: { item: LibraryItem }) {
               <div className="mt-1" onClick={e => e.stopPropagation()}>
                 <StarRating size="sm" value={item.rating} onChange={rating => saveItem({ ...item, rating })} />
               </div>
+            )}
+            {item.status !== 'watchlist' && totalEpisodes > 0 && (
+              <ProgressBar watched={watchedCount} total={totalEpisodes} status={item.status} />
             )}
           </div>
           <button
