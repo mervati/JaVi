@@ -296,7 +296,7 @@ function CalendarioTab() {
   const [entries, setEntries] = useState<CalEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  const watching = items.filter(i => i.type === 'tv' && i.status === 'watching')
+  const watching = items.filter(i => i.type === 'tv' && (i.status === 'watching' || i.status === 'watched'))
   const watchingKey = watching.map(i => i.id).join(',')
 
   useEffect(() => {
@@ -326,7 +326,7 @@ function CalendarioTab() {
   if (watching.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-20 px-8">
-        <p className="text-[#555] text-sm text-center">Nenhuma série em andamento</p>
+        <p className="text-[#555] text-sm text-center">Nenhuma série na biblioteca</p>
       </div>
     )
   }
