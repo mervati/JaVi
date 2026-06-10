@@ -18,6 +18,7 @@ export interface LibraryItem {
   status: 'watched' | 'watchlist' | 'watching' | 'abandoned'
   rating: number
   addedAt: number
+  lastWatchedAt?: number
 }
 
 export function useLibrary() {

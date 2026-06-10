@@ -94,10 +94,18 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
     else setOffsetX(Math.min(dx, MAX_SWIPE_RIGHT))
   }
 
+  async function handleMarkEpisode(wasWatched: boolean) {
+    if (!nextEp) return
+    await toggleEpisode(nextEp.season, nextEp.episode)
+    if (!wasWatched) {
+      saveItem({ ...item, lastWatchedAt: Date.now() })
+    }
+  }
+
   async function onTouchEnd() {
     dragging.current = false
     if (offsetX <= THRESHOLD_LEFT && nextEp) {
-      await toggleEpisode(nextEp.season, nextEp.episode)
+      await handleMarkEpisode(false)
     } else if (offsetX >= THRESHOLD_RIGHT) {
       await saveItem({ ...item, status: 'abandoned' })
     }
@@ -169,7 +177,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
         </div>
 
         <button
-          onClick={() => toggleEpisode(nextEp.season, nextEp.episode)}
+          onClick={() => handleMarkEpisode(epWatched)}
           className={`w-10 h-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
             epWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#333]'
           }`}
@@ -414,7 +422,7 @@ function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
   return [...arr].sort((a, b) => {
     if (by === 'title')  return a.title.localeCompare(b.title, 'pt-BR')
     if (by === 'rating') return (b.rating ?? 0) - (a.rating ?? 0)
-    return (b.addedAt ?? 0) - (a.addedAt ?? 0)
+    return (b.lastWatchedAt ?? b.addedAt ?? 0) - (a.lastWatchedAt ?? a.addedAt ?? 0)
   })
 }
 
