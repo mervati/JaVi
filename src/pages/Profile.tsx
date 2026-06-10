@@ -9,6 +9,33 @@ import type { LibraryItem } from '../hooks/useLibrary'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+function localDateStr(ts: number) {
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function calcStreak(items: LibraryItem[]): number {
+  const dateSet = new Set<string>()
+  items.forEach(item => {
+    if (item.lastWatchedAt) dateSet.add(localDateStr(item.lastWatchedAt))
+    if (item.status === 'watched') dateSet.add(localDateStr(item.addedAt))
+  })
+
+  const todayTs = new Date().setHours(12, 0, 0, 0) as number
+  const todayStr = localDateStr(todayTs)
+  const yestStr  = localDateStr(todayTs - 864e5)
+
+  const start = dateSet.has(todayStr) ? 0 : dateSet.has(yestStr) ? 1 : null
+  if (start === null) return 0
+
+  let streak = 0
+  for (let i = start; i < 365; i++) {
+    if (dateSet.has(localDateStr(todayTs - i * 864e5))) streak++
+    else break
+  }
+  return streak
+}
+
 function minutesToMDH(total: number) {
   const h = Math.floor(total / 60)
   const months = Math.floor(h / (24 * 30))
@@ -197,6 +224,33 @@ export function Profile() {
       .catch(() => setTvMinutes(0))
   }, [totalEpisodes, items.filter(i => i.type === 'tv').map(i => i.id).join(',')])
 
+  // gênero favorito — busca genres de todos os títulos assistidos/assistindo
+  const [favoriteGenre, setFavoriteGenre] = useState<string | null | 'loading'>('loading')
+  const activeIds = items
+    .filter(i => i.status === 'watched' || i.status === 'watching')
+    .map(i => `${i.type}-${i.id}`).join(',')
+  useEffect(() => {
+    const active = items.filter(i => i.status === 'watched' || i.status === 'watching')
+    if (!active.length) { setFavoriteGenre(null); return }
+    Promise.all(active.map(i => i.type === 'movie' ? getDetails(i.id, 'movie') : getSeriesDetails(i.id)))
+      .then(results => {
+        const freq: Record<string, number> = {}
+        results.forEach(r => (r.genres ?? []).forEach((g: any) => {
+          freq[g.name] = (freq[g.name] || 0) + 1
+        }))
+        const top = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]
+        setFavoriteGenre(top ? top[0] : null)
+      })
+      .catch(() => setFavoriteGenre(null))
+  }, [activeIds])
+
+  // streak e nota média — calculados inline a partir dos itens já carregados
+  const streakDays = calcStreak(items)
+  const ratedItems = items.filter(i => i.rating > 0)
+  const avgRating  = ratedItems.length
+    ? (ratedItems.reduce((s, i) => s + i.rating, 0) / ratedItems.length).toFixed(1)
+    : null
+
   const movieMDH = movieMinutes !== null ? minutesToMDH(movieMinutes) : null
   const tvMDH    = tvMinutes    !== null ? minutesToMDH(tvMinutes)    : null
 
@@ -224,6 +278,38 @@ export function Profile() {
       title: 'Tempo vendo filmes',
       loading: !movieMDH,
       content: movieMDH ? <TimeBreakdown {...movieMDH} /> : null,
+    },
+    {
+      icon: '🎭',
+      title: 'Gênero favorito',
+      loading: favoriteGenre === 'loading',
+      content: favoriteGenre && favoriteGenre !== 'loading'
+        ? <span className="text-white font-black text-lg text-center leading-tight">{favoriteGenre}</span>
+        : <span className="text-[#555] text-sm">—</span>,
+    },
+    {
+      icon: '🔥',
+      title: 'Dias seguidos',
+      loading: false,
+      content: (
+        <div className="flex flex-col items-center">
+          <span className="text-white font-black text-3xl">{streakDays}</span>
+          <span className="text-[#555] text-[10px] font-bold mt-1 tracking-wide">DIAS</span>
+        </div>
+      ),
+    },
+    {
+      icon: '⭐',
+      title: 'Nota média',
+      loading: false,
+      content: avgRating
+        ? (
+          <div className="flex flex-col items-center">
+            <span className="text-white font-black text-3xl">{avgRating}</span>
+            <span className="text-[#555] text-[10px] font-bold mt-1 tracking-wide">{ratedItems.length} AVALIAÇÕES</span>
+          </div>
+        )
+        : <span className="text-[#555] text-sm">—</span>,
     },
   ]
 
