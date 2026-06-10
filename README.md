@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# JáVi 🎬📺
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicativo PWA para acompanhar filmes e séries que você já viu — ou quer ver.
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Biblioteca pessoal** — adicione filmes e séries com status: Quero ver, Assistindo, Concluído ou Abandonado
+- **Aba Séries** — seção "Assistir a Seguir" com o próximo episódio não assistido; gesto de arrastar para marcar episódio ou arquivar série
+- **Aba Filmes** — lista dividida em "Quero ver" e "Assistidos", com gesto de arrastar para marcar como assistido ou abandonado
+- **Avaliação por estrelas** — clique ou arraste para dar nota a filmes e séries concluídos
+- **Elenco** — veja o elenco completo com foto, nome real e personagem na aba "Sobre" de cada título
+- **Perfil** — estatísticas de uso: episódios assistidos, filmes assistidos, tempo total vendo TV e filmes
+- **Busca e Explorar** — pesquise qualquer título ou navegue por tendências, mais bem avaliados e lançamentos
+- **Login com Google** — autenticação via Firebase
 
-## React Compiler
+## Tecnologias
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React + TypeScript + Vite
+- Tailwind CSS v4
+- Firebase Auth + Firestore
+- TMDB API
+- PWA (Progressive Web App)
+- Vercel (deploy automático)
 
-## Expanding the ESLint configuration
+## Como rodar localmente
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Crie um arquivo `.env` com as variáveis:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_TMDB_TOKEN=seu_token_aqui
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+## Acesso
+
+Disponível em produção via Vercel.
