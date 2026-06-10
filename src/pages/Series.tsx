@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { PillTabs } from '../components/PillTabs'
 import { useLibrary } from '../hooks/useLibrary'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { getSeriesDetails, getSeasonEpisodes, getPosterUrl } from '../lib/tmdb'
@@ -413,11 +413,6 @@ function CalendarioTab() {
 
 type SortBy = 'date' | 'title' | 'rating'
 
-const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: 'date',   label: 'Data de adição' },
-  { value: 'title',  label: 'Título (A-Z)' },
-  { value: 'rating', label: 'Nota' },
-]
 
 function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
   return [...arr].sort((a, b) => {
@@ -432,7 +427,6 @@ export function Series() {
   const navigate  = useNavigate()
   const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
-  const [showSort, setShowSort] = useState(false)
 
   const series    = items.filter(i => i.type === 'tv')
   const watching  = sortItems(series.filter(i => i.status === 'watching'), sortBy)
@@ -475,19 +469,16 @@ export function Series() {
       {tab === 'lista' && (
         <>
           {/* barra de ordenação */}
-          <div className="flex items-center justify-end px-5 py-2.5 border-b border-[#1a1a1a]">
-            <button
-              onClick={() => setShowSort(true)}
-              className="flex items-center gap-1.5 active:opacity-70"
-              style={{ color: sortBy !== 'date' ? '#f5b730' : '#555' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-              </svg>
-              <span className="text-xs font-semibold">
-                {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
-              </span>
-            </button>
+          <div className="flex items-center justify-center px-5 py-3 border-b border-[#1a1a1a]">
+            <PillTabs
+              options={[
+                { value: 'date'   as SortBy, label: 'Recentes' },
+                { value: 'title'  as SortBy, label: 'A-Z'      },
+                { value: 'rating' as SortBy, label: 'Nota'     },
+              ]}
+              value={sortBy}
+              onChange={setSortBy}
+            />
           </div>
 
           {watching.length > 0 && (
@@ -527,40 +518,6 @@ export function Series() {
             </div>
           )}
 
-          {/* bottom sheet de ordenação — portal para escapar do overflow:hidden do <main> */}
-          {showSort && createPortal(
-            <>
-              <div
-                className="fixed inset-0"
-                style={{ background: 'rgba(0,0,0,0.6)', zIndex: 9998 }}
-                onClick={() => setShowSort(false)}
-              />
-              <div className="fixed bottom-0 left-0 right-0 rounded-t-2xl" style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none', zIndex: 9999 }}>
-                <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-5" style={{ background: '#333' }} />
-                <p className="text-white font-bold text-sm px-5 mb-2">Ordenar por</p>
-                {SORT_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { setSortBy(opt.value); setShowSort(false) }}
-                    className="flex items-center justify-between w-full border-b border-[#1a1a1a] active:bg-[#1a1a1a]"
-                    style={{ padding: '20px 20px' }}
-                  >
-                    <span className="text-sm" style={{ color: sortBy === opt.value ? '#f5b730' : '#fff' }}>{opt.label}</span>
-                    <div
-                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                      style={{ borderColor: sortBy === opt.value ? '#f5b730' : '#333' }}
-                    >
-                      {sortBy === opt.value && (
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f5b730' }} />
-                      )}
-                    </div>
-                  </button>
-                ))}
-                <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }} />
-              </div>
-            </>,
-            document.body
-          )}
         </>
       )}
 
