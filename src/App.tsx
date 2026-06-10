@@ -19,8 +19,9 @@ function AppContent() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/') || location.pathname.startsWith('/lista/')
+  const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
+
 
   const [pullY, setPullY] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -49,6 +50,7 @@ function AppContent() {
 
     function handleStart(e: TouchEvent) {
       if (refreshingRef.current) return
+      if (isDetail) return
       if (el!.scrollTop > 0) return
       startYRef.current = e.touches[0].clientY
       pullingRef.current = true
@@ -107,26 +109,18 @@ function AppContent() {
 
   if (!user) return <LoginPage />
 
-  if (isDetail) {
-    return (
-      <Routes>
-        <Route path="/series/:id" element={<SeriesDetail />} />
-        <Route path="/movie/:id" element={<MovieDetail />} />
-        <Route path="/lista/:status" element={<StatusList />} />
-      </Routes>
-    )
-  }
-
   return (
     <RefreshContext.Provider value={registerRefresh}>
       <div className="flex flex-col" style={{ height: '100svh' }}>
-        <header className="flex-shrink-0 flex items-center justify-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] z-40"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px' }}>
-          <div className="flex items-center gap-2">
-            <img src="/icon-192.png" alt="JáVi" className="w-9 h-9 rounded-lg" />
-            <span className="text-white font-black text-2xl tracking-tight">JáVi</span>
-          </div>
-        </header>
+        {!isDetail && (
+          <header className="flex-shrink-0 flex items-center justify-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] z-40"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px' }}>
+            <div className="flex items-center gap-2">
+              <img src="/icon-192.png" alt="JáVi" className="w-9 h-9 rounded-lg" />
+              <span className="text-white font-black text-2xl tracking-tight">JáVi</span>
+            </div>
+          </header>
+        )}
 
         {(pullY > 0 || refreshing) && (
           <div style={{
@@ -155,7 +149,7 @@ function AppContent() {
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto overflow-x-hidden"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)', overscrollBehaviorY: 'contain' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 70px)', overscrollBehaviorY: 'contain' }}
         >
           <Routes>
             <Route path="/" element={<Home />} />
@@ -165,6 +159,7 @@ function AppContent() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/series/:id" element={<SeriesDetail />} />
             <Route path="/movie/:id" element={<MovieDetail />} />
+            <Route path="/lista/:status" element={<StatusList />} />
           </Routes>
         </main>
 
