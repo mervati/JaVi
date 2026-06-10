@@ -333,7 +333,8 @@ function CalendarioTab() {
 
   const withDate = [...entries.filter(e => e.nextEp?.air_date)]
     .sort((a, b) => a.nextEp!.air_date.localeCompare(b.nextEp!.air_date))
-  const withoutDate = entries.filter(e => !e.nextEp?.air_date)
+  const noDate   = entries.filter(e => !e.nextEp?.air_date && e.seriesStatus !== 'Ended' && e.seriesStatus !== 'Canceled')
+  const ended    = entries.filter(e => !e.nextEp?.air_date && (e.seriesStatus === 'Ended' || e.seriesStatus === 'Canceled'))
 
   const grouped: Record<string, CalEntry[]> = {}
   for (const entry of withDate) {
@@ -379,12 +380,12 @@ function CalendarioTab() {
         </div>
       ))}
 
-      {withoutDate.length > 0 && (
+      {noDate.length > 0 && (
         <div style={{ marginTop: '16px' }}>
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
             <span className="text-[#444] font-bold text-sm">Sem estreia prevista</span>
           </div>
-          {withoutDate.map(({ item, seriesStatus }) => (
+          {noDate.map(({ item, seriesStatus }) => (
             <div
               key={item.id}
               className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
@@ -399,6 +400,35 @@ function CalendarioTab() {
               <div className="flex-1 min-w-0">
                 <p className="text-[#555] text-sm font-bold line-clamp-1">{item.title}</p>
                 <p className="text-[#333] text-xs mt-0.5">{seriesStatusLabel(seriesStatus)}</p>
+              </div>
+              <svg className="w-4 h-4 text-[#222] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {ended.length > 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
+            <span className="text-[#444] font-bold text-sm">Encerrada</span>
+          </div>
+          {ended.map(({ item }) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
+              onClick={() => navigate(`/series/${item.id}`)}
+            >
+              <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0" style={{ filter: 'grayscale(1)', opacity: 0.4 }}>
+                {item.poster
+                  ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#444] text-sm font-bold line-clamp-1">{item.title}</p>
+                <p className="text-[#333] text-xs mt-0.5">Encerrada</p>
               </div>
               <svg className="w-4 h-4 text-[#222] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
