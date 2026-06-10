@@ -46,46 +46,54 @@ function AppContent() {
   useEffect(() => {
     const el = mainRef.current
     if (!el) return
+
+    function handleStart(e: TouchEvent) {
+      if (refreshingRef.current) return
+      if (el!.scrollTop > 0) return
+      startYRef.current = e.touches[0].clientY
+      pullingRef.current = true
+    }
+
     function handleMove(e: TouchEvent) {
-      if (!el || !pullingRef.current || refreshingRef.current) return
-      if (el.scrollTop > 0) { pullingRef.current = false; setPullY(0); return }
+      if (!pullingRef.current || refreshingRef.current) return
+      if (el!.scrollTop > 0) { pullingRef.current = false; setPullY(0); return }
       const dy = e.touches[0].clientY - startYRef.current
       if (dy > 0) {
-        e.preventDefault()
+        if (e.cancelable) e.preventDefault()
         const clamped = Math.min(dy * 0.45, PTR_THRESHOLD + 20)
         pullYRef.current = clamped
         setPullY(clamped)
       }
     }
-    el.addEventListener('touchmove', handleMove, { passive: false })
-    return () => el.removeEventListener('touchmove', handleMove)
-  }, [])
 
-  function onPullStart(e: React.TouchEvent) {
-    if (refreshingRef.current) return
-    if ((mainRef.current?.scrollTop ?? 0) > 0) return
-    startYRef.current = e.touches[0].clientY
-    pullingRef.current = true
-  }
-
-  async function onPullEnd() {
-    if (!pullingRef.current) return
-    pullingRef.current = false
-    const py = pullYRef.current
-    pullYRef.current = 0
-    if (py >= PTR_THRESHOLD) {
-      setRefreshing(true)
-      setPullY(PTR_THRESHOLD)
-      try {
-        await (refreshFnRef.current?.() ?? new Promise<void>(r => setTimeout(r, 600)))
-      } finally {
-        setRefreshing(false)
+    async function handleEnd() {
+      if (!pullingRef.current) return
+      pullingRef.current = false
+      const py = pullYRef.current
+      pullYRef.current = 0
+      if (py >= PTR_THRESHOLD) {
+        setRefreshing(true)
+        setPullY(PTR_THRESHOLD)
+        try {
+          await (refreshFnRef.current?.() ?? new Promise<void>(r => setTimeout(r, 600)))
+        } finally {
+          setRefreshing(false)
+          setPullY(0)
+        }
+      } else {
         setPullY(0)
       }
-    } else {
-      setPullY(0)
     }
-  }
+
+    el.addEventListener('touchstart', handleStart, { passive: false })
+    el.addEventListener('touchmove',  handleMove,  { passive: false })
+    el.addEventListener('touchend',   handleEnd)
+    return () => {
+      el.removeEventListener('touchstart', handleStart)
+      el.removeEventListener('touchmove',  handleMove)
+      el.removeEventListener('touchend',   handleEnd)
+    }
+  }, [])
 
   const pct = Math.min(pullY / PTR_THRESHOLD, 1)
 
@@ -146,10 +154,8 @@ function AppContent() {
 
         <main
           ref={mainRef}
-          onTouchStart={onPullStart}
-          onTouchEnd={onPullEnd}
           className="flex-1 overflow-y-auto overflow-x-hidden"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)', overscrollBehaviorY: 'contain' }}
         >
           <Routes>
             <Route path="/" element={<Home />} />
