@@ -2,17 +2,20 @@ export function PillTabs<T extends string>({
   options,
   value,
   onChange,
+  size = 'md',
 }: {
   options: { value: T; label: string }[]
   value: T
   onChange: (v: T) => void
+  size?: 'sm' | 'md'
 }) {
+  const sm = size === 'sm'
   return (
     <div style={{
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '4px',
-      padding: '6px',
+      gap: sm ? '2px' : '4px',
+      padding: sm ? '4px' : '6px',
       background: '#111',
       border: '1px solid #222',
       borderRadius: '999px',
@@ -26,10 +29,10 @@ export function PillTabs<T extends string>({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            height: '34px',
-            padding: '0 16px',
+            height: sm ? '28px' : '34px',
+            padding: sm ? '0 12px' : '0 16px',
             borderRadius: '999px',
-            fontSize: '13px',
+            fontSize: sm ? '11px' : '13px',
             fontWeight: 600,
             border: 'none',
             cursor: 'pointer',

@@ -469,7 +469,7 @@ export function Series() {
       {tab === 'lista' && (
         <>
           {/* barra de ordenação */}
-          <div className="flex items-center justify-center px-5 py-3 border-b border-[#1a1a1a]">
+          <div className="flex items-center justify-end px-5 py-2.5 border-b border-[#1a1a1a]">
             <PillTabs
               options={[
                 { value: 'date'   as SortBy, label: 'Recentes' },
@@ -478,6 +478,7 @@ export function Series() {
               ]}
               value={sortBy}
               onChange={setSortBy}
+              size="sm"
             />
           </div>
 
