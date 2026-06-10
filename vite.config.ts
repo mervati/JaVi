@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      // usa o manifest.json existente em /public
+      injectRegister: 'auto',
       manifest: false,
       workbox: {
         // cacheia o app shell (JS, CSS, HTML)
@@ -27,7 +27,7 @@ export default defineConfig({
           },
           // Posters e imagens TMDB — cache-first (imagens mudam raramente)
           {
-            urlPattern: /^https:\/\/image\.themoviedb\.org\/.*/i,
+            urlPattern: /^https:\/\/image\.tmdb\.org\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'tmdb-images',

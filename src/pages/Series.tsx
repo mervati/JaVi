@@ -36,9 +36,11 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
   const MAX_SWIPE_RIGHT = 80
 
   useEffect(() => {
-    getSeriesDetails(item.id).then(data => {
-      setSeasons(data.seasons?.filter((s: any) => s.season_number > 0) ?? [])
-    })
+    getSeriesDetails(item.id)
+      .then(data => {
+        setSeasons(data.seasons?.filter((s: any) => s.season_number > 0) ?? [])
+      })
+      .catch(() => setReady(true))
   }, [item.id])
 
   useEffect(() => {
@@ -73,7 +75,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
       if (!cancelled) { setReady(true); setNextEp(null) }
     }
 
-    run()
+    run().catch(() => { if (!cancelled) setReady(true) })
     return () => { cancelled = true }
   }, [seasons, watchedCount, item.id])
 
