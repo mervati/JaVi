@@ -198,6 +198,7 @@ function SeasonRow({
   const [open, setOpen] = useState(false)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [loading, setLoading] = useState(false)
+  const [marking, setMarking] = useState(false)
   const [pending, setPending] = useState<PendingEp | null>(null)
   const { isWatched, toggleEpisode, markSeason, countWatchedInSeason } = useEpisodes(seriesId)
   const neverAskKey = `javi_noask_${seriesId}`
@@ -218,30 +219,38 @@ function SeasonRow({
   }
 
   async function handleMarkSeason() {
-    const eps = episodes.length > 0
-      ? episodes.map(e => e.episode_number)
-      : Array.from({ length: season.episode_count }, (_, i) => i + 1)
-    await markSeason(season.season_number, eps, !allWatched)
-    if (!allWatched) onEpisodeWatched()
+    if (marking) return
+    setMarking(true)
+    try {
+      // usa sempre índice sequencial 1..N — consistente com countWatchedInSeason
+      const eps = Array.from({ length: season.episode_count }, (_, i) => i + 1)
+      const wasAllWatched = allWatched
+      await markSeason(season.season_number, eps, !wasAllWatched)
+      if (!wasAllWatched) onEpisodeWatched()
+    } finally {
+      setMarking(false)
+    }
   }
 
-  async function handleEpisodeTap(ep: Episode) {
-    const alreadyWatched = isWatched(season.season_number, ep.episode_number)
+  // episodeIdx é a posição sequencial (1-based) no array da temporada
+  // independente do ep.episode_number do TMDB (que pode ser absoluto)
+  async function handleEpisodeTap(ep: Episode, episodeIdx: number) {
+    const alreadyWatched = isWatched(season.season_number, episodeIdx)
 
     if (alreadyWatched) {
-      await toggleEpisode(season.season_number, ep.episode_number)
+      await toggleEpisode(season.season_number, episodeIdx)
       return
     }
 
     const prevUnwatched = Array.from(
-      { length: ep.episode_number - 1 },
+      { length: episodeIdx - 1 },
       (_, i) => i + 1
     ).filter(n => !isWatched(season.season_number, n))
 
     if (prevUnwatched.length > 0 && !neverAsk) {
-      setPending({ season: season.season_number, episode: ep.episode_number, prevUnwatched })
+      setPending({ season: season.season_number, episode: episodeIdx, prevUnwatched })
     } else {
-      await toggleEpisode(season.season_number, ep.episode_number)
+      await toggleEpisode(season.season_number, episodeIdx)
       onEpisodeWatched()
     }
   }
@@ -296,7 +305,10 @@ function SeasonRow({
               <span className="text-[#888] text-sm">{watched}/{season.episode_count}</span>
               <button
                 onClick={handleMarkSeason}
+                disabled={marking}
                 className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
+                  marking ? 'opacity-50' : ''
+                } ${
                   allWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#444]'
                 }`}
               >
@@ -324,13 +336,13 @@ function SeasonRow({
                 <div className="w-5 h-5 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              episodes.map(ep => (
+              episodes.map((ep, idx) => (
                 <SwipeableEpisode
                   key={ep.id}
                   ep={ep}
                   seasonNumber={season.season_number}
-                  watched={isWatched(season.season_number, ep.episode_number)}
-                  onTap={() => handleEpisodeTap(ep)}
+                  watched={isWatched(season.season_number, idx + 1)}
+                  onTap={() => handleEpisodeTap(ep, idx + 1)}
                 />
               ))
             )}

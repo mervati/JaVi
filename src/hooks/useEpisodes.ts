@@ -37,12 +37,15 @@ export function useEpisodes(seriesId: number) {
   async function markSeason(season: number, episodeNumbers: number[], asWatched: boolean) {
     if (!user) return
     const ref = doc(db, 'users', user.uid, 'series_progress', String(seriesId))
-    const next = new Set(watched)
-    episodeNumbers.forEach(ep => {
-      const k = key(season, ep)
-      if (asWatched) next.add(k)
-      else next.delete(k)
-    })
+    let next: Set<string>
+    if (asWatched) {
+      next = new Set(watched)
+      episodeNumbers.forEach(ep => next.add(key(season, ep)))
+    } else {
+      // remove todos os episódios da temporada pelo prefixo — evita mismatch de numeração
+      const prefix = `${season}-`
+      next = new Set([...watched].filter(k => !k.startsWith(prefix)))
+    }
     await setDoc(ref, { watched: Array.from(next) }, { merge: true })
   }
 

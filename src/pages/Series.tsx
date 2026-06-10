@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   abandoned: { label: 'Abandonado',  color: 'text-[#555] border-[#555]' },
 }
 
-interface NextEp { season: number; episode: number; name: string }
+interface NextEp { season: number; episode: number; name: string; displayNumber?: number }
 
 function NextEpisodeCard({ item }: { item: LibraryItem }) {
   const navigate = useNavigate()
@@ -61,10 +61,13 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
             if (cancelled) return
             seasonCache.current[sn] = data.episodes ?? []
           }
-          for (const ep of seasonCache.current[sn]) {
-            if (!check(sn, ep.episode_number)) {
+          const eps: any[] = seasonCache.current[sn]
+          for (let i = 0; i < eps.length; i++) {
+            const ep = eps[i]
+            const idx = i + 1
+            if (!check(sn, idx)) {
               if (!cancelled) {
-                setNextEp({ season: sn, episode: ep.episode_number, name: ep.name })
+                setNextEp({ season: sn, episode: idx, name: ep.name, displayNumber: ep.episode_number })
                 setReady(true)
               }
               return
@@ -160,7 +163,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
             <span className="text-[#666] text-xs ml-0.5">›</span>
           </button>
           <p className="text-white text-sm font-black">
-            T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.episode).padStart(2, '0')}
+            T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
           </p>
           <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{nextEp.name}</p>
         </div>
