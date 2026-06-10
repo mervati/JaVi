@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
+import { UndoToast } from '../components/UndoToast'
+import { PosterImage } from '../components/PosterImage'
+import { useRegisterRefresh } from '../contexts/RefreshContext'
 import { useLibrary } from '../hooks/useLibrary'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { getSeriesDetails, getSeasonEpisodes, getPosterUrl } from '../lib/tmdb'
@@ -54,11 +57,13 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
 
   const [offsetX, setOffsetX] = useState(0)
   const startXRef = useRef(0)
+  const startYRef = useRef(0)
   const dragging = useRef(false)
-  const THRESHOLD_LEFT = -70
-  const MAX_SWIPE_LEFT = -80
-  const THRESHOLD_RIGHT = 70
-  const MAX_SWIPE_RIGHT = 80
+  const dirRef = useRef<'h' | 'v' | null>(null)
+  const THRESHOLD_LEFT = -80
+  const MAX_SWIPE_LEFT = -90
+  const THRESHOLD_RIGHT = 80
+  const MAX_SWIPE_RIGHT = 90
 
   useEffect(() => {
     getSeriesDetails(item.id)
@@ -109,12 +114,21 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
 
   function onTouchStart(e: React.TouchEvent) {
     startXRef.current = e.touches[0].clientX
+    startYRef.current = e.touches[0].clientY
     dragging.current = true
+    dirRef.current = null
   }
 
   function onTouchMove(e: React.TouchEvent) {
     if (!dragging.current) return
     const dx = e.touches[0].clientX - startXRef.current
+    const dy = e.touches[0].clientY - startYRef.current
+    if (dirRef.current === null) {
+      if (Math.abs(dx) > Math.abs(dy) + 4) dirRef.current = 'h'
+      else if (Math.abs(dy) > Math.abs(dx) + 4) { dirRef.current = 'v'; dragging.current = false; return }
+      else return
+    }
+    if (dirRef.current !== 'h') return
     if (dx < 0) setOffsetX(Math.max(dx, MAX_SWIPE_LEFT))
     else setOffsetX(Math.min(dx, MAX_SWIPE_RIGHT))
   }
@@ -181,10 +195,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
           className="w-12 h-16 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0 cursor-pointer active:opacity-70"
           onClick={() => navigate(`/series/${item.id}`)}
         >
-          {item.poster
-            ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-          }
+          <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -232,11 +243,10 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
   )
 }
 
-function SeriesRow({ item }: { item: LibraryItem }) {
+function SeriesRow({ item, onRemove }: { item: LibraryItem; onRemove: (item: LibraryItem) => void }) {
   const navigate = useNavigate()
-  const { saveItem, removeItem } = useLibrary()
+  const { saveItem } = useLibrary()
   const { watchedCount } = useEpisodes(item.id)
-  const [confirm, setConfirm] = useState(false)
   const [totalEpisodes, setTotalEpisodes] = useState(0)
   const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.watching
   const isCompleted = item.status === 'abandoned' || item.status === 'watched'
@@ -250,32 +260,6 @@ function SeriesRow({ item }: { item: LibraryItem }) {
 
   return (
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
-      {confirm && (
-        <div
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
-          style={{ background: 'rgba(10,10,10,0.97)' }}
-          onClick={e => e.stopPropagation()}
-        >
-          <p className="text-white text-sm font-bold text-center px-4">Remover "{item.title}" da biblioteca?</p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setConfirm(false)}
-              className="px-5 py-2 rounded-xl text-sm font-bold"
-              style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #333' }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={() => { removeItem(item.id, item.type); setConfirm(false) }}
-              className="px-5 py-2 rounded-xl text-sm font-bold"
-              style={{ background: '#e05555', color: '#fff' }}
-            >
-              Remover
-            </button>
-          </div>
-        </div>
-      )}
-
       <div style={isCompleted ? { opacity: 0.4 } : {}}>
         <div
           className="flex items-center gap-3 active:bg-[#111] transition-colors"
@@ -283,10 +267,7 @@ function SeriesRow({ item }: { item: LibraryItem }) {
           onClick={() => navigate(`/series/${item.id}`)}
         >
           <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-            {item.poster
-              ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" style={isCompleted ? { filter: 'grayscale(1)' } : {}} />
-              : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-            }
+            <PosterImage src={getPosterUrl(item.poster)} alt={item.title} style={isCompleted ? { filter: 'grayscale(1)' } : undefined} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-base leading-tight mb-2">{item.title}</p>
@@ -303,7 +284,7 @@ function SeriesRow({ item }: { item: LibraryItem }) {
             )}
           </div>
           <button
-            onClick={e => { e.stopPropagation(); setConfirm(true) }}
+            onClick={e => { e.stopPropagation(); onRemove(item) }}
             className="p-2 text-[#333] flex-shrink-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,10 +393,7 @@ function CalendarioTab() {
               onClick={() => navigate(`/series/${item.id}`)}
             >
               <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-                {item.poster
-                  ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                }
+                <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[#888] text-[11px] font-bold uppercase tracking-wide line-clamp-1 mb-0.5">{item.title}</p>
@@ -505,12 +483,38 @@ function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
 }
 
 export function Series() {
-  const { items } = useLibrary()
+  const { items, removeItem } = useLibrary()
   const navigate  = useNavigate()
   const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [calRefreshKey, setCalRefreshKey] = useState(0)
 
-  const series    = items.filter(i => i.type === 'tv')
+  useRegisterRefresh(async () => setCalRefreshKey(k => k + 1))
+  const [pendingRemove, setPendingRemove] = useState<LibraryItem | null>(null)
+  const pendingRemoveRef = useRef<LibraryItem | null>(null)
+
+  function requestRemove(item: LibraryItem) {
+    if (pendingRemoveRef.current) {
+      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
+    }
+    pendingRemoveRef.current = item
+    setPendingRemove(item)
+  }
+
+  function undoRemove() {
+    pendingRemoveRef.current = null
+    setPendingRemove(null)
+  }
+
+  function confirmRemove() {
+    if (pendingRemoveRef.current) {
+      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
+      pendingRemoveRef.current = null
+      setPendingRemove(null)
+    }
+  }
+
+  const series    = items.filter(i => i.type === 'tv' && i.id !== pendingRemove?.id)
   const watching  = sortItems(series.filter(i => i.status === 'watching'), sortBy)
   const watchlist = sortItems(series.filter(i => i.status === 'watchlist'), sortBy)
   const completed = sortItems(series.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
@@ -583,7 +587,7 @@ export function Series() {
                 </span>
               </div>
               {watchlist.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} />
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
               ))}
             </div>
           )}
@@ -596,7 +600,7 @@ export function Series() {
                 </span>
               </div>
               {completed.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} />
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
               ))}
             </div>
           )}
@@ -604,7 +608,16 @@ export function Series() {
         </>
       )}
 
-      {tab === 'calendario' && <CalendarioTab />}
+      {tab === 'calendario' && <CalendarioTab key={calRefreshKey} />}
+
+      {pendingRemove && (
+        <UndoToast
+          key={pendingRemove.id}
+          title={pendingRemove.title}
+          onUndo={undoRemove}
+          onExpire={confirmRemove}
+        />
+      )}
     </div>
   )
 }

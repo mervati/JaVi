@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes poster-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.poster-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 35%, #444 50%, #2a2a2a 65%, #1a1a1a 100%);
+  background-size: 200% 100%;
+  animation: poster-shimmer 1.4s ease-in-out infinite;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

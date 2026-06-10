@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { getTrending, getTopRated, getAiringToday, getVideos, getPosterUrl, getRecommendations } from '../lib/tmdb'
 import { useLibrary } from '../hooks/useLibrary'
 import { PillTabs } from '../components/PillTabs'
+import { PosterImage } from '../components/PosterImage'
+import { useRegisterRefresh } from '../contexts/RefreshContext'
 
 interface TmdbItem {
   id: number
@@ -76,10 +78,7 @@ function ItemRow({ item, type }: { item: TmdbItem; type: 'movie' | 'tv' }) {
       className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
     >
       <div className="w-12 h-18 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0" style={{ height: '72px', minWidth: '48px' }}>
-        {item.poster_path
-          ? <img src={getPosterUrl(item.poster_path) ?? ''} alt={title} className="w-full h-full object-cover" />
-          : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-        }
+        <PosterImage src={getPosterUrl(item.poster_path)} alt={title} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -313,10 +312,7 @@ function FeedTab() {
             }
           >
             <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-              {item.posterPath
-                ? <img src={getPosterUrl(item.posterPath) ?? ''} alt={item.mediaTitle} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-              }
+              <PosterImage src={getPosterUrl(item.posterPath)} alt={item.mediaTitle} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-bold text-sm leading-tight line-clamp-1">{item.mediaTitle}</p>
@@ -405,6 +401,9 @@ const TABS: { key: MainTab; label: string }[] = [
 
 export function Home() {
   const [tab, setTab] = useState<MainTab>('feed')
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  useRegisterRefresh(async () => setRefreshKey(k => k + 1))
 
   return (
     <div className="flex flex-col min-h-full">
@@ -421,11 +420,11 @@ export function Home() {
       </div>
 
       <div>
-        {tab === 'paravoc'   && <ParaVoceTab />}
-        {tab === 'feed'      && <FeedTab />}
-        {tab === 'tendencias' && <TendenciasTab />}
-        {tab === 'avaliados' && <AvaliadosTab />}
-        {tab === 'hoje'      && <HojeTab />}
+        {tab === 'paravoc'    && <ParaVoceTab   key={refreshKey} />}
+        {tab === 'feed'       && <FeedTab        key={refreshKey} />}
+        {tab === 'tendencias' && <TendenciasTab  key={refreshKey} />}
+        {tab === 'avaliados'  && <AvaliadosTab   key={refreshKey} />}
+        {tab === 'hoje'       && <HojeTab        key={refreshKey} />}
       </div>
     </div>
   )

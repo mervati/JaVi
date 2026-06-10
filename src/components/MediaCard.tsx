@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPosterUrl, getWatchProviders } from '../lib/tmdb'
+import { PosterImage } from './PosterImage'
 import { useLibrary, type LibraryItem } from '../hooks/useLibrary'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -73,10 +74,7 @@ export function MediaCard({ media }: Props) {
     <div className="border-b border-[#1a1a1a]">
       <div className="flex items-center gap-3 px-4 py-3 active:bg-[#111] transition-colors" onClick={handleRowTap}>
         <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-          {poster
-            ? <img src={poster} alt={title} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-          }
+          <PosterImage src={poster} alt={title} />
         </div>
 
         <div className="flex-1 min-w-0">

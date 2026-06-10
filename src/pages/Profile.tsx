@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, onSnapshot } from 'firebase/firestore'
 import { useAuth } from '../contexts/AuthContext'
 import { useLibrary } from '../hooks/useLibrary'
+import { PosterImage } from '../components/PosterImage'
 import { getPosterUrl, getDetails, getSeriesDetails } from '../lib/tmdb'
 import { db } from '../lib/firebase'
 import {
@@ -120,10 +121,7 @@ function SeriesSection({ title, items }: { title: string; items: LibraryItem[] }
             className="flex-shrink-0 cursor-pointer active:opacity-70 transition-opacity"
           >
             <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1">
-              {item.poster
-                ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-              }
+              <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
             </div>
             <p className="text-white text-xs font-medium w-24 line-clamp-2 leading-tight">{item.title}</p>
           </div>
@@ -150,10 +148,7 @@ function AbandonedSection({ items }: { items: LibraryItem[] }) {
             className="flex-shrink-0 cursor-pointer"
           >
             <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1" style={{ filter: 'grayscale(1)' }}>
-              {item.poster
-                ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-              }
+              <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
             </div>
             <p className="text-[#555] text-xs font-medium w-24 line-clamp-2 leading-tight">{item.title}</p>
           </div>

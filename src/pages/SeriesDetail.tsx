@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar } from '../lib/tmdb'
+import { PosterImage } from '../components/PosterImage'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { useLibrary } from '../hooks/useLibrary'
 import { RatingPrompt } from '../components/RatingPrompt'
@@ -108,18 +109,29 @@ function SwipeableEpisode({
 }) {
   const [offsetX, setOffsetX] = useState(0)
   const startX = useRef(0)
+  const startY = useRef(0)
   const dragging = useRef(false)
-  const THRESHOLD = -70
-  const MAX_SWIPE = -80
+  const dir = useRef<'h' | 'v' | null>(null)
+  const THRESHOLD = -80
+  const MAX_SWIPE = -90
 
   function onTouchStart(e: React.TouchEvent) {
     startX.current = e.touches[0].clientX
+    startY.current = e.touches[0].clientY
     dragging.current = true
+    dir.current = null
   }
 
   function onTouchMove(e: React.TouchEvent) {
     if (!dragging.current) return
     const dx = e.touches[0].clientX - startX.current
+    const dy = e.touches[0].clientY - startY.current
+    if (dir.current === null) {
+      if (Math.abs(dx) > Math.abs(dy) + 4) dir.current = 'h'
+      else if (Math.abs(dy) > Math.abs(dx) + 4) { dir.current = 'v'; dragging.current = false; return }
+      else return
+    }
+    if (dir.current !== 'h') return
     if (dx < 0) setOffsetX(Math.max(dx, MAX_SWIPE))
   }
 
@@ -150,14 +162,7 @@ function SwipeableEpisode({
         className="flex items-center gap-3 px-5 py-3"
       >
         <div className="w-20 h-12 bg-[#1a1a1a] rounded overflow-hidden flex-shrink-0">
-          {ep.still_path
-            ? <img src={getThumbUrl(ep.still_path) ?? ''} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-[#333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                </svg>
-              </div>
-          }
+          <PosterImage src={getThumbUrl(ep.still_path)} alt="" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -562,10 +567,7 @@ export function SeriesDetail() {
                     className="flex-shrink-0 cursor-pointer active:opacity-70"
                   >
                     <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1.5">
-                      {item.poster_path
-                        ? <img src={getPosterUrl(item.poster_path) ?? ''} alt={item.name} className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                      }
+                      <PosterImage src={getPosterUrl(item.poster_path)} alt={item.name} />
                     </div>
                     <p className="text-white text-[11px] font-medium w-24 line-clamp-2 leading-tight">{item.name}</p>
                     {item.vote_average > 0 && (

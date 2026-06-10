@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl } from '../lib/tmdb'
+import { PosterImage } from '../components/PosterImage'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   watching:  { label: 'Assistindo',  color: 'text-[#4a9eff] border-[#4a9eff]' },
@@ -66,10 +67,7 @@ export function StatusList() {
                   className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0"
                   style={isGrayed ? { filter: 'grayscale(1)' } : {}}
                 >
-                  {item.poster
-                    ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                  }
+                  <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
                 </div>
 
                 <div className="flex-1 min-w-0">

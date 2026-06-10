@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
+import { UndoToast } from '../components/UndoToast'
+import { PosterImage } from '../components/PosterImage'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl } from '../lib/tmdb'
 import { StarRating } from '../components/StarRating'
@@ -14,19 +16,20 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   abandoned: { label: 'Abandonado', color: 'text-[#555] border-[#555]' },
 }
 
-function SwipeableMovieRow({ item }: { item: LibraryItem }) {
+function SwipeableMovieRow({ item, onRemove }: { item: LibraryItem; onRemove: (item: LibraryItem) => void }) {
   const navigate = useNavigate()
-  const { saveItem, removeItem } = useLibrary()
+  const { saveItem } = useLibrary()
   const [offsetX, setOffsetX] = useState(0)
   const [confirm, setConfirm] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [showRating, setShowRating] = useState(false)
   const startXRef = useRef(0)
+  const startYRef = useRef(0)
   const dragging = useRef(false)
-  const THRESHOLD_LEFT = -70
-  const MAX_SWIPE_LEFT = -80
-  const THRESHOLD_RIGHT = 70
-  const MAX_SWIPE_RIGHT = 80
+  const dirRef = useRef<'h' | 'v' | null>(null)
+  const THRESHOLD_LEFT = -80
+  const MAX_SWIPE_LEFT = -90
+  const THRESHOLD_RIGHT = 80
+  const MAX_SWIPE_RIGHT = 90
 
   const isWatched = item.status === 'watched'
   const isAbandoned = item.status === 'abandoned'
@@ -34,12 +37,21 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
 
   function onTouchStart(e: React.TouchEvent) {
     startXRef.current = e.touches[0].clientX
+    startYRef.current = e.touches[0].clientY
     dragging.current = true
+    dirRef.current = null
   }
 
   function onTouchMove(e: React.TouchEvent) {
     if (!dragging.current) return
     const dx = e.touches[0].clientX - startXRef.current
+    const dy = e.touches[0].clientY - startYRef.current
+    if (dirRef.current === null) {
+      if (Math.abs(dx) > Math.abs(dy) + 4) dirRef.current = 'h'
+      else if (Math.abs(dy) > Math.abs(dx) + 4) { dirRef.current = 'v'; dragging.current = false; return }
+      else return
+    }
+    if (dirRef.current !== 'h') return
     if (dx < 0) setOffsetX(Math.max(dx, MAX_SWIPE_LEFT))
     else setOffsetX(Math.min(dx, MAX_SWIPE_RIGHT))
   }
@@ -69,33 +81,6 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
       />
     )}
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
-      {/* modal confirmação de exclusão */}
-      {confirmDelete && (
-        <div
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
-          style={{ background: 'rgba(10,10,10,0.97)' }}
-          onClick={e => e.stopPropagation()}
-        >
-          <p className="text-white text-sm font-bold text-center px-4">Remover "{item.title}" da biblioteca?</p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setConfirmDelete(false)}
-              className="px-5 py-2 rounded-xl text-sm font-bold"
-              style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #333' }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={() => { removeItem(item.id, item.type); setConfirmDelete(false) }}
-              className="px-5 py-2 rounded-xl text-sm font-bold"
-              style={{ background: '#e05555', color: '#fff' }}
-            >
-              Remover
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* modal de confirmação — fora da camada com opacity */}
       {confirm && (
         <div
@@ -152,10 +137,7 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
         >
           <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0"
             style={isCompleted ? { filter: 'grayscale(1)' } : {}}>
-            {item.poster
-              ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-              : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-            }
+            <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -175,7 +157,7 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
           </div>
 
           <button
-            onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
+            onClick={e => { e.stopPropagation(); onRemove(item) }}
             className="p-2 text-[#333] flex-shrink-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,11 +183,34 @@ function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
 }
 
 export function Movies() {
-  const { items } = useLibrary()
+  const { items, removeItem } = useLibrary()
   const navigate = useNavigate()
   const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [pendingRemove, setPendingRemove] = useState<LibraryItem | null>(null)
+  const pendingRemoveRef = useRef<LibraryItem | null>(null)
 
-  const movies    = items.filter(i => i.type === 'movie')
+  function requestRemove(item: LibraryItem) {
+    if (pendingRemoveRef.current) {
+      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
+    }
+    pendingRemoveRef.current = item
+    setPendingRemove(item)
+  }
+
+  function undoRemove() {
+    pendingRemoveRef.current = null
+    setPendingRemove(null)
+  }
+
+  function confirmRemove() {
+    if (pendingRemoveRef.current) {
+      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
+      pendingRemoveRef.current = null
+      setPendingRemove(null)
+    }
+  }
+
+  const movies    = items.filter(i => i.type === 'movie' && i.id !== pendingRemove?.id)
   const active    = sortItems(movies.filter(i => i.status === 'watchlist' || i.status === 'watching'), sortBy)
   const completed = sortItems(movies.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
 
@@ -247,7 +252,7 @@ export function Movies() {
                 </span>
               </div>
               {active.map(item => (
-                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} />
+                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
               ))}
             </div>
           )}
@@ -261,13 +266,21 @@ export function Movies() {
                 </span>
               </div>
               {completed.map(item => (
-                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} />
+                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
               ))}
             </div>
           )}
         </div>
       )}
 
+      {pendingRemove && (
+        <UndoToast
+          key={pendingRemove.id}
+          title={pendingRemove.title}
+          onUndo={undoRemove}
+          onExpire={confirmRemove}
+        />
+      )}
     </div>
   )
 }

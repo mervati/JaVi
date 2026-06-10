@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl } from '../lib/tmdb'
+import { PosterImage } from '../components/PosterImage'
 import { StarRating } from '../components/StarRating'
 import { useNavigate } from 'react-router-dom'
 
@@ -66,10 +67,7 @@ export function Library() {
           {filtered.map((item) => (
             <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 px-4 py-3 border-b border-[#1a1a1a]">
               <div className="w-14 h-20 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
-                {item.poster
-                  ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                }
+                <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
               </div>
 
               <div className="flex-1 min-w-0">

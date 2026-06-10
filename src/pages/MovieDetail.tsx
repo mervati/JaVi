@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getSimilar } from '../lib/tmdb'
+import { PosterImage } from '../components/PosterImage'
 import { useLibrary } from '../hooks/useLibrary'
 import { StarRating } from '../components/StarRating'
 import { RatingPrompt } from '../components/RatingPrompt'
@@ -220,10 +221,7 @@ export function MovieDetail() {
                     className="flex-shrink-0 cursor-pointer active:opacity-70"
                   >
                     <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1.5">
-                      {item.poster_path
-                        ? <img src={getPosterUrl(item.poster_path) ?? ''} alt={item.title} className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
-                      }
+                      <PosterImage src={getPosterUrl(item.poster_path)} alt={item.title} />
                     </div>
                     <p className="text-white text-[11px] font-medium w-24 line-clamp-2 leading-tight">{item.title}</p>
                     {item.vote_average > 0 && (
