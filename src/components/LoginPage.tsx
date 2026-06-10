@@ -1,15 +1,30 @@
 import { useAuth } from '../contexts/AuthContext'
 
-function isInAppBrowser() {
+function needsExternalBrowser() {
+  // testa se sessionStorage está bloqueado (Firebase precisa disso para o OAuth)
+  const sessionBlocked = (() => {
+    try {
+      sessionStorage.setItem('__javi_test__', '1')
+      sessionStorage.removeItem('__javi_test__')
+      return false
+    } catch {
+      return true
+    }
+  })()
+
+  // detecta navegadores in-app conhecidos pelo user agent
   const ua = navigator.userAgent
-  return /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Twitter|LinkedInApp|musical_ly|TikTok/i.test(ua)
-    || (/Android/i.test(ua) && /wv\)/i.test(ua))
-    || (/iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua) && /AppleWebKit/i.test(ua))
+  const isWebView =
+    /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Twitter|LinkedInApp|musical_ly|TikTok/i.test(ua) ||
+    (/Android/i.test(ua) && /wv\)/i.test(ua)) ||
+    (/iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua) && /AppleWebKit/i.test(ua))
+
+  return sessionBlocked || isWebView
 }
 
 export function LoginPage() {
   const { login, loginError } = useAuth()
-  const inApp = isInAppBrowser()
+  const inApp = needsExternalBrowser()
   const appUrl = window.location.href
 
   return (
