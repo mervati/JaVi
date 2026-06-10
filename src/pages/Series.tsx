@@ -343,9 +343,9 @@ function CalendarioTab() {
   }
 
   return (
-    <div>
+    <div style={{ paddingTop: '12px' }}>
       {Object.entries(grouped).map(([date, dayEntries]) => (
-        <div key={date}>
+        <div key={date} style={{ marginBottom: '8px' }}>
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
             <span className="text-[#f5b730] font-bold text-sm">{formatDateHeader(date)}</span>
             <span className="text-[#333] text-xs">
@@ -380,7 +380,7 @@ function CalendarioTab() {
       ))}
 
       {withoutDate.length > 0 && (
-        <div>
+        <div style={{ marginTop: '16px' }}>
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
             <span className="text-[#444] font-bold text-sm">Sem estreia prevista</span>
           </div>
