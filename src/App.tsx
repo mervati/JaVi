@@ -25,7 +25,7 @@ function AppContent() {
   const [pullY, setPullY] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const mainRef = useRef<HTMLDivElement>(null)
-  const refreshFnRef = useRef<() => Promise<void>>()
+  const refreshFnRef = useRef<(() => Promise<void>) | undefined>(undefined)
   const startYRef = useRef(0)
   const pullingRef = useRef(false)
   const pullYRef = useRef(0)
@@ -47,7 +47,7 @@ function AppContent() {
     const el = mainRef.current
     if (!el) return
     function handleMove(e: TouchEvent) {
-      if (!pullingRef.current || refreshingRef.current) return
+      if (!el || !pullingRef.current || refreshingRef.current) return
       if (el.scrollTop > 0) { pullingRef.current = false; setPullY(0); return }
       const dy = e.touches[0].clientY - startYRef.current
       if (dy > 0) {
