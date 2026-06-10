@@ -205,8 +205,8 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
                     T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
                   </span>
                   {remaining > 0 && (
-                    <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>
-                      +{remaining} ep.
+                    <span style={{ color: '#fff', fontSize: '11px', fontWeight: 500 }}>
+                      +{remaining}
                     </span>
                   )}
                 </div>
