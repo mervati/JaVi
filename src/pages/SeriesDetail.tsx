@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar } from '../lib/tmdb'
 import { PosterImage } from '../components/PosterImage'
+import { EpisodeCheckbox } from '../components/EpisodeCheckbox'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { useLibrary } from '../hooks/useLibrary'
 import { RatingPrompt } from '../components/RatingPrompt'
@@ -173,19 +174,7 @@ function SwipeableEpisode({
           {ep.runtime && <p className="text-[#555] text-xs mt-0.5">{ep.runtime} min</p>}
         </div>
 
-        <button
-          onClick={onTap}
-          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
-            watched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#333]'
-          }`}
-        >
-          <svg
-            className={`w-5 h-5 ${watched ? 'text-white' : 'text-[#333]'}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+        <EpisodeCheckbox checked={watched} onChange={onTap} />
       </div>
     </div>
   )
@@ -308,19 +297,7 @@ function SeasonRow({
 
             <div className="flex items-center gap-3">
               <span className="text-[#888] text-sm">{watched}/{season.episode_count}</span>
-              <button
-                onClick={handleMarkSeason}
-                disabled={marking}
-                className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all active:scale-90 ${
-                  marking ? 'opacity-50' : ''
-                } ${
-                  allWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#444]'
-                }`}
-              >
-                <svg className={`w-5 h-5 ${allWatched ? 'text-white' : 'text-[#444]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
+              <EpisodeCheckbox checked={allWatched} onChange={handleMarkSeason} disabled={marking} />
             </div>
           </div>
 

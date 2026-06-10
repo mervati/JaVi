@@ -1,5 +1,56 @@
 @import "tailwindcss";
 
+.ep-check {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  font-size: 26px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.ep-check.sm { font-size: 23px; }
+
+.ep-check input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.ep-check-mark {
+  position: relative;
+  height: 1.6em;
+  width: 1.6em;
+  border-radius: 50%;
+  background: #ffeded38;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+}
+
+.ep-check input:checked ~ .ep-check-mark {
+  background: linear-gradient(144deg, #0f9b58, #38ef7d 50%, #43e97b);
+  opacity: 0.9;
+}
+
+.ep-check-mark::after {
+  content: "";
+  position: absolute;
+  display: block;
+  left: 0.61em;
+  top: 0.43em;
+  width: 0.25em;
+  height: 0.5em;
+  border: solid rgba(255, 255, 255, 0.45);
+  border-width: 0 0.15em 0.15em 0;
+  transform: rotate(45deg);
+  transition: border-color 0.2s ease;
+}
+
+.ep-check input:checked ~ .ep-check-mark::after {
+  border-color: #fff;
+}
+
 @keyframes ptr-spin {
   to { transform: rotate(360deg); }
 }

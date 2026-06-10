@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
 import { UndoToast } from '../components/UndoToast'
 import { PosterImage } from '../components/PosterImage'
+import { EpisodeCheckbox } from '../components/EpisodeCheckbox'
 import { useRegisterRefresh } from '../contexts/RefreshContext'
 import { useLibrary } from '../hooks/useLibrary'
 import { useEpisodes } from '../hooks/useEpisodes'
@@ -228,16 +229,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
           })()}
         </div>
 
-        <button
-          onClick={() => handleMarkEpisode(epWatched)}
-          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
-            epWatched ? 'bg-[#5cb85c] border-[#5cb85c]' : 'border-[#333]'
-          }`}
-        >
-          <svg className={`w-4 h-4 ${epWatched ? 'text-white' : 'text-[#333]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+        <EpisodeCheckbox checked={epWatched} onChange={() => handleMarkEpisode(epWatched)} size="sm" />
       </div>
     </div>
   )
