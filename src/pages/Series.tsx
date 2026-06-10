@@ -195,13 +195,25 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
             <span className="text-[#aaa] text-[11px] font-bold uppercase tracking-wide">{item.title}</span>
             <span className="text-[#666] text-xs ml-0.5">›</span>
           </button>
-          <p className="text-white text-sm font-black">
-            T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
-          </p>
-          <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{nextEp.name}</p>
           {(() => {
             const total = seasons.reduce((s: number, season: any) => s + (season.episode_count ?? 0), 0)
-            return <ProgressBar watched={watchedCount} total={total} />
+            const remaining = total > 0 ? total - watchedCount : 0
+            return (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-white text-sm font-black">
+                    T{String(nextEp.season).padStart(2, '0')} | E{String(nextEp.displayNumber ?? nextEp.episode).padStart(2, '0')}
+                  </span>
+                  {remaining > 0 && (
+                    <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>
+                      +{remaining} ep.
+                    </span>
+                  )}
+                </div>
+                <p className="text-[#888] text-xs leading-tight line-clamp-1 mt-0.5">{nextEp.name}</p>
+                <ProgressBar watched={watchedCount} total={total} />
+              </>
+            )
           })()}
         </div>
 
