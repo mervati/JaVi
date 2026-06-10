@@ -234,7 +234,7 @@ function SeasonRow({
 
   // episodeIdx é a posição sequencial (1-based) no array da temporada
   // independente do ep.episode_number do TMDB (que pode ser absoluto)
-  async function handleEpisodeTap(ep: Episode, episodeIdx: number) {
+  async function handleEpisodeTap(_ep: Episode, episodeIdx: number) {
     const alreadyWatched = isWatched(season.season_number, episodeIdx)
 
     if (alreadyWatched) {
