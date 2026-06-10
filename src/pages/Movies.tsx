@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl } from '../lib/tmdb'
 import { StarRating } from '../components/StarRating'
+import { RatingPrompt } from '../components/RatingPrompt'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import type { LibraryItem } from '../hooks/useLibrary'
 
@@ -18,6 +19,7 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
   const [offsetX, setOffsetX] = useState(0)
   const [confirm, setConfirm] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showRating, setShowRating] = useState(false)
   const startXRef = useRef(0)
   const dragging = useRef(false)
   const THRESHOLD_LEFT = -70
@@ -45,10 +47,10 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
     dragging.current = false
     if (offsetX <= THRESHOLD_LEFT) {
       if (isCompleted) {
-        // pede confirmação antes de tirar dos assistidos
         setConfirm(true)
       } else {
         saveItem({ ...item, status: 'watched' })
+        setShowRating(true)
       }
     } else if (offsetX >= THRESHOLD_RIGHT) {
       saveItem({ ...item, status: 'abandoned' })
@@ -57,6 +59,14 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
   }
 
   return (
+    <>
+    {showRating && (
+      <RatingPrompt
+        title={item.title}
+        onSave={rating => { saveItem({ ...item, status: 'watched', rating }); setShowRating(false) }}
+        onSkip={() => setShowRating(false)}
+      />
+    )}
     <div className="relative overflow-hidden border-b border-[#1a1a1a]">
       {/* modal confirmação de exclusão */}
       {confirmDelete && (
@@ -174,15 +184,35 @@ function SwipeableMovieRow({ item }: { item: LibraryItem }) {
         </div>
       </div>
     </div>
+    </>
   )
+}
+
+type SortBy = 'date' | 'title' | 'rating'
+
+const SORT_OPTIONS: { value: SortBy; label: string }[] = [
+  { value: 'date',   label: 'Data de adição' },
+  { value: 'title',  label: 'Título (A-Z)' },
+  { value: 'rating', label: 'Nota' },
+]
+
+function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
+  return [...arr].sort((a, b) => {
+    if (by === 'title')  return a.title.localeCompare(b.title, 'pt-BR')
+    if (by === 'rating') return (b.rating ?? 0) - (a.rating ?? 0)
+    return (b.addedAt ?? 0) - (a.addedAt ?? 0)
+  })
 }
 
 export function Movies() {
   const { items } = useLibrary()
   const navigate = useNavigate()
+  const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [showSort, setShowSort] = useState(false)
+
   const movies    = items.filter(i => i.type === 'movie')
-  const active    = movies.filter(i => i.status === 'watchlist' || i.status === 'watching')
-  const completed = movies.filter(i => i.status === 'watched' || i.status === 'abandoned')
+  const active    = sortItems(movies.filter(i => i.status === 'watchlist' || i.status === 'watching'), sortBy)
+  const completed = sortItems(movies.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
 
   return (
     <div className="flex flex-col min-h-full">
@@ -199,7 +229,23 @@ export function Movies() {
         </div>
       ) : (
         <div>
-          {/* Quero ver — cor normal */}
+          {/* barra de ordenação */}
+          <div className="flex items-center justify-end px-5 py-2.5 border-b border-[#1a1a1a]">
+            <button
+              onClick={() => setShowSort(true)}
+              className="flex items-center gap-1.5 active:opacity-70"
+              style={{ color: sortBy !== 'date' ? '#f5b730' : '#555' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              <span className="text-xs font-semibold">
+                {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
+              </span>
+            </button>
+          </div>
+
+          {/* Quero ver */}
           {active.length > 0 && (
             <div>
               <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
@@ -213,7 +259,7 @@ export function Movies() {
             </div>
           )}
 
-          {/* Assistidos/Abandonados — acinzentado */}
+          {/* Assistidos/Abandonados */}
           {completed.length > 0 && (
             <div style={active.length > 0 ? { marginTop: '24px' } : {}}>
               <div style={{ padding: active.length > 0 ? '16px 20px 10px 20px' : '20px 20px 10px 20px', borderTop: active.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
@@ -227,6 +273,39 @@ export function Movies() {
             </div>
           )}
         </div>
+      )}
+
+      {/* bottom sheet de ordenação */}
+      {showSort && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
+            onClick={() => setShowSort(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl" style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none' }}>
+            <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-5" style={{ background: '#333' }} />
+            <p className="text-white font-bold text-sm px-5 mb-2">Ordenar por</p>
+            {SORT_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { setSortBy(opt.value); setShowSort(false) }}
+                className="flex items-center justify-between w-full px-5 py-4 border-b border-[#1a1a1a] active:bg-[#1a1a1a]"
+              >
+                <span className="text-sm" style={{ color: sortBy === opt.value ? '#f5b730' : '#fff' }}>{opt.label}</span>
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                  style={{ borderColor: sortBy === opt.value ? '#f5b730' : '#333' }}
+                >
+                  {sortBy === opt.value && (
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f5b730' }} />
+                  )}
+                </div>
+              </button>
+            ))}
+            <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }} />
+          </div>
+        </>
       )}
     </div>
   )

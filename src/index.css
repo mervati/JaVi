@@ -160,7 +160,7 @@ body {
   transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
   cursor: text;
   z-index: 0;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .search-input::placeholder {
@@ -192,14 +192,19 @@ body {
 .tabs-nav {
   display: flex;
   width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tabs-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .tabs-nav .btn {
-  flex: 1;
+  flex: none;
   font-size: 13px;
-  padding: 0.8em 0.4em;
+  padding: 0.8em 1.1em;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }

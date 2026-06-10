@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits } from '../lib/tmdb'
+import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar } from '../lib/tmdb'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { useLibrary } from '../hooks/useLibrary'
+import { RatingPrompt } from '../components/RatingPrompt'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
 interface Episode {
@@ -345,8 +346,11 @@ export function SeriesDetail() {
   const navigate = useNavigate()
   const [series, setSeries] = useState<Series | null>(null)
   const [cast, setCast] = useState<any[]>([])
+  const [providers, setProviders] = useState<any>(null)
+  const [similar, setSimilar] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'sobre' | 'episodios'>('episodios')
+  const [showRating, setShowRating] = useState(false)
   const { saveItem, getItem } = useLibrary()
 
   const seriesId = Number(id)
@@ -380,6 +384,7 @@ export function SeriesDetail() {
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
       saveItem({ ...existing, status: newStatus })
+      if (newStatus === 'watched') setShowRating(true)
     }
   }, [watchedCount, series])
 
@@ -388,9 +393,13 @@ export function SeriesDetail() {
     Promise.all([
       getSeriesDetails(seriesId),
       getCredits(seriesId, 'tv'),
-    ]).then(([data, credits]) => {
+      getWatchProviders(seriesId, 'tv'),
+      getSimilar(seriesId, 'tv'),
+    ]).then(([data, credits, prov, sim]) => {
       setSeries(data)
       setCast(credits.slice(0, 20))
+      setProviders(prov)
+      setSimilar(sim.slice(0, 20))
       setLoading(false)
     })
   }, [seriesId])
@@ -409,8 +418,20 @@ export function SeriesDetail() {
   const startYear = series.first_air_date?.slice(0, 4)
   const endYear = series.status === 'Ended' ? series.last_air_date?.slice(0, 4) : null
 
+  const existingItem = getItem(seriesId, 'tv')
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {showRating && (
+        <RatingPrompt
+          title={series.name}
+          onSave={rating => {
+            if (existingItem) saveItem({ ...existingItem, rating })
+            setShowRating(false)
+          }}
+          onSkip={() => setShowRating(false)}
+        />
+      )}
       <div className="relative">
         <div className="h-64 bg-[#111] overflow-hidden">
           {(series.backdrop_path || series.poster_path) && (
@@ -467,12 +488,37 @@ export function SeriesDetail() {
             </div>
           )}
           {series.overview
-            ? <p className="text-[#aaa] text-sm leading-relaxed">{series.overview}</p>
-            : <p className="text-[#555] text-sm">Sem sinopse disponível.</p>
+            ? <p className="text-[#aaa] text-sm leading-relaxed mb-5">{series.overview}</p>
+            : <p className="text-[#555] text-sm mb-5">Sem sinopse disponível.</p>
           }
 
+          {providers && (() => {
+            const all = [
+              ...(providers.flatrate ?? []),
+              ...(providers.rent ?? []),
+              ...(providers.buy ?? []),
+            ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.provider_id === p.provider_id) === i)
+            return all.length > 0 ? (
+              <div style={{ marginBottom: '32px' }}>
+                <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
+                <div className="flex gap-3 flex-wrap">
+                  {all.map((p: any) => (
+                    <div key={p.provider_id} className="flex flex-col items-center gap-1">
+                      <img
+                        src={`https://image.tmdb.org/t/p/w45${p.logo_path}`}
+                        alt={p.provider_name}
+                        className="w-10 h-10 rounded-lg"
+                      />
+                      <span className="text-[9px] text-[#555] text-center max-w-[48px] leading-tight">{p.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+          })()}
+
           {cast.length > 0 && (
-            <div className="mt-6">
+            <div style={{ marginBottom: '32px' }}>
               <p className="text-white font-bold text-sm mb-3">Elenco</p>
               <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
                 {cast.map(actor => (
@@ -487,6 +533,32 @@ export function SeriesDetail() {
                     </div>
                     <p className="text-white text-[10px] font-bold text-center leading-tight line-clamp-2">{actor.name}</p>
                     <p className="text-[#888] text-[10px] text-center leading-tight line-clamp-2">{actor.character}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {similar.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Títulos similares</p>
+              <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
+                {similar.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => navigate(`/series/${item.id}`)}
+                    className="flex-shrink-0 cursor-pointer active:opacity-70"
+                  >
+                    <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1.5">
+                      {item.poster_path
+                        ? <img src={getPosterUrl(item.poster_path) ?? ''} alt={item.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+                      }
+                    </div>
+                    <p className="text-white text-[11px] font-medium w-24 line-clamp-2 leading-tight">{item.name}</p>
+                    {item.vote_average > 0 && (
+                      <p className="text-[#f5b730] text-[10px] font-bold mt-0.5">★ {item.vote_average.toFixed(1)}</p>
+                    )}
                   </div>
                 ))}
               </div>

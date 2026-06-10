@@ -69,6 +69,18 @@ export async function getAiringToday() {
   return data.results ?? []
 }
 
+export async function getSimilar(id: number, type: 'movie' | 'tv') {
+  const res = await fetch(`${BASE_URL}/${type}/${id}/similar?language=pt-BR&page=1`, { headers })
+  const data = await res.json()
+  return (data.results ?? []).map((r: any) => ({ ...r, media_type: type }))
+}
+
+export async function getRecommendations(id: number, type: 'movie' | 'tv') {
+  const res = await fetch(`${BASE_URL}/${type}/${id}/recommendations?language=pt-BR&page=1`, { headers })
+  const data = await res.json()
+  return (data.results ?? []).map((r: any) => ({ ...r, media_type: type }))
+}
+
 export async function getVideos(id: number, type: 'movie' | 'tv') {
   const res = await fetch(`${BASE_URL}/${type}/${id}/videos?language=en-US`, { headers })
   const data = await res.json()

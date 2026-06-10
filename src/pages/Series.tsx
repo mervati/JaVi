@@ -250,12 +250,180 @@ function SeriesRow({ item }: { item: LibraryItem }) {
   )
 }
 
+interface CalEntry {
+  item: LibraryItem
+  nextEp: { air_date: string; season_number: number; episode_number: number; name: string } | null
+  seriesStatus: string
+}
+
+function formatDateHeader(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const today = new Date(); today.setHours(12, 0, 0, 0)
+  const diff = Math.round((d.getTime() - today.getTime()) / 86400000)
+  if (diff <= 0) return 'Hoje'
+  if (diff === 1) return 'Amanhã'
+  if (diff <= 6) {
+    const wd = d.toLocaleDateString('pt-BR', { weekday: 'long' })
+    return wd.charAt(0).toUpperCase() + wd.slice(1)
+  }
+  return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '')
+}
+
+function seriesStatusLabel(status: string): string {
+  if (status === 'Ended') return 'Encerrada'
+  if (status === 'Canceled') return 'Cancelada'
+  if (status === 'In Production') return 'Em produção'
+  return 'Renovada, sem data de estreia'
+}
+
+function CalendarioTab() {
+  const { items } = useLibrary()
+  const navigate = useNavigate()
+  const [entries, setEntries] = useState<CalEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const watching = items.filter(i => i.type === 'tv' && i.status === 'watching')
+  const watchingKey = watching.map(i => i.id).join(',')
+
+  useEffect(() => {
+    if (!watchingKey) { setEntries([]); setLoading(false); return }
+    setLoading(true)
+    Promise.all(
+      watching.map(async item => {
+        try {
+          const details = await getSeriesDetails(item.id)
+          return { item, nextEp: details.next_episode_to_air ?? null, seriesStatus: details.status ?? '' } as CalEntry
+        } catch {
+          return { item, nextEp: null, seriesStatus: '' } as CalEntry
+        }
+      })
+    ).then(results => { setEntries(results); setLoading(false) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchingKey])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-6 h-6 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (watching.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20 px-8">
+        <p className="text-[#555] text-sm text-center">Nenhuma série em andamento</p>
+      </div>
+    )
+  }
+
+  const withDate = [...entries.filter(e => e.nextEp?.air_date)]
+    .sort((a, b) => a.nextEp!.air_date.localeCompare(b.nextEp!.air_date))
+  const withoutDate = entries.filter(e => !e.nextEp?.air_date)
+
+  const grouped: Record<string, CalEntry[]> = {}
+  for (const entry of withDate) {
+    const d = entry.nextEp!.air_date
+    if (!grouped[d]) grouped[d] = []
+    grouped[d].push(entry)
+  }
+
+  return (
+    <div>
+      {Object.entries(grouped).map(([date, dayEntries]) => (
+        <div key={date}>
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
+            <span className="text-[#f5b730] font-bold text-sm">{formatDateHeader(date)}</span>
+            <span className="text-[#333] text-xs">
+              {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+            </span>
+          </div>
+          {dayEntries.map(({ item, nextEp }) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
+              onClick={() => navigate(`/series/${item.id}`)}
+            >
+              <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
+                {item.poster
+                  ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#888] text-[11px] font-bold uppercase tracking-wide line-clamp-1 mb-0.5">{item.title}</p>
+                <p className="text-white font-black text-sm">
+                  T{String(nextEp!.season_number).padStart(2, '0')} | E{String(nextEp!.episode_number).padStart(2, '0')}
+                </p>
+                <p className="text-[#555] text-xs mt-0.5 line-clamp-1">{nextEp!.name}</p>
+              </div>
+              <svg className="w-4 h-4 text-[#333] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {withoutDate.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
+            <span className="text-[#444] font-bold text-sm">Sem estreia prevista</span>
+          </div>
+          {withoutDate.map(({ item, seriesStatus }) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
+              onClick={() => navigate(`/series/${item.id}`)}
+            >
+              <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0" style={{ filter: 'grayscale(1)', opacity: 0.5 }}>
+                {item.poster
+                  ? <img src={getPosterUrl(item.poster) ?? ''} alt={item.title} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#555] text-sm font-bold line-clamp-1">{item.title}</p>
+                <p className="text-[#333] text-xs mt-0.5">{seriesStatusLabel(seriesStatus)}</p>
+              </div>
+              <svg className="w-4 h-4 text-[#222] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type SortBy = 'date' | 'title' | 'rating'
+
+const SORT_OPTIONS: { value: SortBy; label: string }[] = [
+  { value: 'date',   label: 'Data de adição' },
+  { value: 'title',  label: 'Título (A-Z)' },
+  { value: 'rating', label: 'Nota' },
+]
+
+function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
+  return [...arr].sort((a, b) => {
+    if (by === 'title')  return a.title.localeCompare(b.title, 'pt-BR')
+    if (by === 'rating') return (b.rating ?? 0) - (a.rating ?? 0)
+    return (b.addedAt ?? 0) - (a.addedAt ?? 0)
+  })
+}
+
 export function Series() {
   const { items } = useLibrary()
   const navigate  = useNavigate()
-  const series = items.filter(i => i.type === 'tv')
-  const watching = series.filter(i => i.status === 'watching')
-  const others   = series.filter(i => i.status !== 'watching')
+  const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
+  const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [showSort, setShowSort] = useState(false)
+
+  const series    = items.filter(i => i.type === 'tv')
+  const watching  = sortItems(series.filter(i => i.status === 'watching'), sortBy)
+  const watchlist = sortItems(series.filter(i => i.status === 'watchlist'), sortBy)
+  const completed = sortItems(series.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
 
   if (series.length === 0) {
     return (
@@ -280,32 +448,107 @@ export function Series() {
 
   return (
     <div className="flex flex-col min-h-full">
-      {watching.length > 0 && (
-        <div>
-          <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
-            <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
-              ASSISTIR A SEGUIR
-            </span>
-          </div>
-          {watching.map(item => <NextEpisodeCard key={item.id} item={item} />)}
-        </div>
-      )}
+      {/* sub-tabs */}
+      <div className="tabs-nav sticky top-0 bg-[#0a0a0a] z-30">
+        <button className={`btn ${tab === 'lista' ? 'btn-active' : ''}`} onClick={() => setTab('lista')}>
+          Lista
+        </button>
+        <button className={`btn ${tab === 'calendario' ? 'btn-active' : ''}`} onClick={() => setTab('calendario')}>
+          Calendário
+        </button>
+      </div>
 
-      {others.length > 0 && (
-        <div style={watching.length > 0 ? { marginTop: '24px' } : {}}>
-          {watching.length > 0 && (
-            <div style={{ padding: '16px 20px 10px 20px', borderTop: '1px solid #1a1a1a', textAlign: 'center' }}>
-              <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
-                TODAS AS SÉRIES
+      {tab === 'lista' && (
+        <>
+          {/* barra de ordenação */}
+          <div className="flex items-center justify-end px-5 py-2.5 border-b border-[#1a1a1a]">
+            <button
+              onClick={() => setShowSort(true)}
+              className="flex items-center gap-1.5 active:opacity-70"
+              style={{ color: sortBy !== 'date' ? '#f5b730' : '#555' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              <span className="text-xs font-semibold">
+                {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
               </span>
+            </button>
+          </div>
+
+          {watching.length > 0 && (
+            <div>
+              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
+                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+                  ASSISTIR A SEGUIR
+                </span>
+              </div>
+              {watching.map(item => <NextEpisodeCard key={item.id} item={item} />)}
             </div>
           )}
 
-          {others.map(item => (
-            <SeriesRow key={`${item.type}-${item.id}`} item={item} />
-          ))}
-        </div>
+          {watchlist.length > 0 && (
+            <div style={watching.length > 0 ? { marginTop: '24px' } : {}}>
+              <div style={{ padding: watching.length > 0 ? '16px 20px 10px 20px' : '20px 20px 10px 20px', borderTop: watching.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
+                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+                  QUERO VER
+                </span>
+              </div>
+              {watchlist.map(item => (
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} />
+              ))}
+            </div>
+          )}
+
+          {completed.length > 0 && (
+            <div style={watching.length > 0 || watchlist.length > 0 ? { marginTop: '24px' } : {}}>
+              <div style={{ padding: '16px 20px 10px 20px', borderTop: watching.length > 0 || watchlist.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
+                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+                  TODAS AS SÉRIES
+                </span>
+              </div>
+              {completed.map(item => (
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} />
+              ))}
+            </div>
+          )}
+
+          {/* bottom sheet de ordenação */}
+          {showSort && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                style={{ background: 'rgba(0,0,0,0.6)' }}
+                onClick={() => setShowSort(false)}
+              />
+              <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl" style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none' }}>
+                <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-5" style={{ background: '#333' }} />
+                <p className="text-white font-bold text-sm px-5 mb-2">Ordenar por</p>
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setSortBy(opt.value); setShowSort(false) }}
+                    className="flex items-center justify-between w-full px-5 py-4 border-b border-[#1a1a1a] active:bg-[#1a1a1a]"
+                  >
+                    <span className="text-sm" style={{ color: sortBy === opt.value ? '#f5b730' : '#fff' }}>{opt.label}</span>
+                    <div
+                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                      style={{ borderColor: sortBy === opt.value ? '#f5b730' : '#333' }}
+                    >
+                      {sortBy === opt.value && (
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f5b730' }} />
+                      )}
+                    </div>
+                  </button>
+                ))}
+                <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }} />
+              </div>
+            </>
+          )}
+        </>
       )}
+
+      {tab === 'calendario' && <CalendarioTab />}
     </div>
   )
 }

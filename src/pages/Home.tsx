@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getTrending, getTopRated, getAiringToday, getVideos, getPosterUrl } from '../lib/tmdb'
+import { getTrending, getTopRated, getAiringToday, getVideos, getPosterUrl, getRecommendations } from '../lib/tmdb'
+import { useLibrary } from '../hooks/useLibrary'
 
 interface TmdbItem {
   id: number
@@ -35,7 +36,7 @@ const VIDEO_TYPE_PT: Record<string, string> = {
 
 const BTS_PRIORITY = ['Behind the Scenes', 'Featurette', 'Bloopers', 'Clip', 'Teaser', 'Trailer']
 
-type MainTab = 'feed' | 'tendencias' | 'avaliados' | 'hoje'
+type MainTab = 'paravoc' | 'feed' | 'tendencias' | 'avaliados' | 'hoje'
 type TrendWindow = 'day' | 'week'
 type TrendFilter = 'all' | 'movie' | 'tv'
 type RatingType = 'movie' | 'tv'
@@ -344,11 +345,66 @@ function FeedTab() {
   )
 }
 
+function ParaVoceTab() {
+  const { items } = useLibrary()
+  const [results, setResults] = useState<TmdbItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const watched = items.filter(i => i.status === 'watched' || i.status === 'watching')
+    if (watched.length === 0) { setLoading(false); return }
+
+    const sample = watched.slice(-8)
+    const libraryIds = new Set(items.map(i => `${i.type}-${i.id}`))
+
+    Promise.all(sample.map(i => getRecommendations(i.id, i.type))).then(all => {
+      const seen = new Set<string>()
+      const merged: TmdbItem[] = []
+      for (const list of all) {
+        for (const r of list) {
+          const key = `${r.media_type}-${r.id}`
+          if (!seen.has(key) && !libraryIds.has(key)) {
+            seen.add(key)
+            merged.push(r)
+          }
+        }
+      }
+      setResults(merged.slice(0, 40))
+      setLoading(false)
+    })
+  }, [items.filter(i => i.status === 'watched' || i.status === 'watching').map(i => i.id).join(',')])
+
+  if (loading) return <LoadingList />
+
+  if (results.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 px-8">
+        <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center text-3xl">✨</div>
+        <p className="text-white font-bold text-center">Nenhuma recomendação ainda</p>
+        <p className="text-[#555] text-sm text-center">Marque filmes e séries como assistidos para receber sugestões personalizadas</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {results.map(item => (
+        <ItemRow
+          key={`${item.media_type}-${item.id}`}
+          item={item}
+          type={(item.media_type === 'movie' ? 'movie' : 'tv') as 'movie' | 'tv'}
+        />
+      ))}
+    </div>
+  )
+}
+
 const TABS: { key: MainTab; label: string }[] = [
-  { key: 'feed', label: 'Feed' },
+  { key: 'paravoc',   label: 'Para você' },
+  { key: 'feed',      label: 'Feed' },
   { key: 'tendencias', label: 'Tendências' },
   { key: 'avaliados', label: 'Mais Avaliados' },
-  { key: 'hoje', label: 'No Ar Hoje' },
+  { key: 'hoje',      label: 'No Ar Hoje' },
 ]
 
 export function Home() {
@@ -369,10 +425,11 @@ export function Home() {
       </div>
 
       <div>
-        {tab === 'feed' && <FeedTab />}
+        {tab === 'paravoc'   && <ParaVoceTab />}
+        {tab === 'feed'      && <FeedTab />}
         {tab === 'tendencias' && <TendenciasTab />}
         {tab === 'avaliados' && <AvaliadosTab />}
-        {tab === 'hoje' && <HojeTab />}
+        {tab === 'hoje'      && <HojeTab />}
       </div>
     </div>
   )

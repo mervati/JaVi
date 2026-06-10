@@ -135,6 +135,7 @@ function AbandonedSection({ items }: { items: LibraryItem[] }) {
 export function Profile() {
   const { user, logout } = useAuth()
   const { items } = useLibrary()
+  const navigate = useNavigate()
 
   const watched   = items.filter(i => i.status === 'watched')
   const watchlist = items.filter(i => i.status === 'watchlist')
@@ -244,22 +245,21 @@ export function Profile() {
 
       {/* grid de contagens */}
       <div className="grid grid-cols-4 gap-2 px-4" style={{ marginBottom: '28px' }}>
-        <div className="bg-[#111] rounded-xl p-3 text-center">
-          <p className="text-white font-black text-xl">{watching.length}</p>
-          <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>Assistindo</p>
-        </div>
-        <div className="bg-[#111] rounded-xl p-3 text-center">
-          <p className="text-white font-black text-xl">{watched.length}</p>
-          <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>Assistidos</p>
-        </div>
-        <div className="bg-[#111] rounded-xl p-3 text-center">
-          <p className="text-white font-black text-xl">{watchlist.length}</p>
-          <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>Quero ver</p>
-        </div>
-        <div className="bg-[#111] rounded-xl p-3 text-center">
-          <p className="text-white font-black text-xl">{abandoned.length}</p>
-          <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>Abandonados</p>
-        </div>
+        {([
+          { status: 'watching',  count: watching.length,  label: 'Assistindo'  },
+          { status: 'watched',   count: watched.length,   label: 'Assistidos'  },
+          { status: 'watchlist', count: watchlist.length, label: 'Quero ver'   },
+          { status: 'abandoned', count: abandoned.length, label: 'Abandonados' },
+        ] as const).map(({ status, count, label }) => (
+          <button
+            key={status}
+            onClick={() => navigate(`/lista/${status}`)}
+            className="bg-[#111] rounded-xl p-3 text-center active:bg-[#1a1a1a] transition-colors"
+          >
+            <p className="text-white font-black text-xl">{count}</p>
+            <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>{label}</p>
+          </button>
+        ))}
       </div>
 
       {/* listas de posters */}

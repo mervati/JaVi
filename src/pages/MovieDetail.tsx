@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits } from '../lib/tmdb'
+import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getSimilar } from '../lib/tmdb'
 import { useLibrary } from '../hooks/useLibrary'
 import { StarRating } from '../components/StarRating'
+import { RatingPrompt } from '../components/RatingPrompt'
 
 interface Movie {
   id: number
@@ -34,8 +35,10 @@ export function MovieDetail() {
   const [movie, setMovie] = useState<Movie | null>(null)
   const [providers, setProviders] = useState<Providers | null>(null)
   const [cast, setCast] = useState<any[]>([])
+  const [similar, setSimilar] = useState<any[]>([])
   const [tab, setTab] = useState<'sobre' | 'elenco'>('sobre')
   const [loading, setLoading] = useState(true)
+  const [showRating, setShowRating] = useState(false)
   const { saveItem, removeItem, getItem } = useLibrary()
 
   const movieId = Number(id)
@@ -47,10 +50,12 @@ export function MovieDetail() {
       getDetails(movieId, 'movie'),
       getWatchProviders(movieId, 'movie'),
       getCredits(movieId, 'movie'),
-    ]).then(([details, prov, credits]) => {
+      getSimilar(movieId, 'movie'),
+    ]).then(([details, prov, credits, sim]) => {
       setMovie(details)
       setProviders(prov)
       setCast(credits.slice(0, 20))
+      setSimilar(sim.slice(0, 20))
       setLoading(false)
     })
   }, [movieId])
@@ -61,6 +66,7 @@ export function MovieDetail() {
       removeItem(movie.id, 'movie')
       return
     }
+    const wasWatched = item?.status === 'watched'
     saveItem({
       id: movie.id,
       type: 'movie',
@@ -70,6 +76,7 @@ export function MovieDetail() {
       rating: item?.rating ?? 0,
       addedAt: item?.addedAt ?? Date.now(),
     })
+    if (status === 'watched' && !wasWatched) setShowRating(true)
   }
 
   if (loading) {
@@ -181,11 +188,11 @@ export function MovieDetail() {
           )}
 
           {movie.overview ? (
-            <p className="text-[#aaa] text-sm leading-relaxed mb-5">{movie.overview}</p>
+            <p className="text-[#aaa] text-sm leading-relaxed" style={{ marginBottom: '24px' }}>{movie.overview}</p>
           ) : null}
 
           {allProviders.length > 0 && (
-            <div>
+            <div style={{ marginBottom: '32px' }}>
               <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
               <div className="flex gap-3 flex-wrap">
                 {allProviders.map(p => (
@@ -201,7 +208,44 @@ export function MovieDetail() {
               </div>
             </div>
           )}
+
+          {similar.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Títulos similares</p>
+              <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
+                {similar.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => navigate(`/movie/${item.id}`)}
+                    className="flex-shrink-0 cursor-pointer active:opacity-70"
+                  >
+                    <div className="w-24 h-36 bg-[#1a1a1a] rounded-xl overflow-hidden mb-1.5">
+                      {item.poster_path
+                        ? <img src={getPosterUrl(item.poster_path) ?? ''} alt={item.title} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-[#333] text-xs">?</div>
+                      }
+                    </div>
+                    <p className="text-white text-[11px] font-medium w-24 line-clamp-2 leading-tight">{item.title}</p>
+                    {item.vote_average > 0 && (
+                      <p className="text-[#f5b730] text-[10px] font-bold mt-0.5">★ {item.vote_average.toFixed(1)}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {showRating && movie && (
+        <RatingPrompt
+          title={movie.title}
+          onSave={rating => {
+            if (item) saveItem({ ...item, rating })
+            setShowRating(false)
+          }}
+          onSkip={() => setShowRating(false)}
+        />
       )}
 
       {tab === 'elenco' && cast.length > 0 && (

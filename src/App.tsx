@@ -8,6 +8,7 @@ import { Movies } from './pages/Movies'
 import { Profile } from './pages/Profile'
 import { SeriesDetail } from './pages/SeriesDetail'
 import { MovieDetail } from './pages/MovieDetail'
+import { StatusList } from './pages/StatusList'
 import { BottomNav } from './components/BottomNav'
 import { useEffect, useRef } from 'react'
 
@@ -15,7 +16,7 @@ function AppContent() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
+  const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/') || location.pathname.startsWith('/lista/')
   const prevUser = useRef(user)
 
   useEffect(() => {
@@ -40,6 +41,7 @@ function AppContent() {
       <Routes>
         <Route path="/series/:id" element={<SeriesDetail />} />
         <Route path="/movie/:id" element={<MovieDetail />} />
+        <Route path="/lista/:status" element={<StatusList />} />
       </Routes>
     )
   }
