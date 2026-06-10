@@ -85,13 +85,13 @@ function AppContent() {
       }
     }
 
-    el.addEventListener('touchstart', handleStart, { passive: false })
-    el.addEventListener('touchmove',  handleMove,  { passive: false })
-    el.addEventListener('touchend',   handleEnd)
+    el.addEventListener('touchstart',       handleStart, { passive: true })
+    document.addEventListener('touchmove',  handleMove,  { passive: false })
+    document.addEventListener('touchend',   handleEnd)
     return () => {
-      el.removeEventListener('touchstart', handleStart)
-      el.removeEventListener('touchmove',  handleMove)
-      el.removeEventListener('touchend',   handleEnd)
+      el.removeEventListener('touchstart',       handleStart)
+      document.removeEventListener('touchmove',  handleMove)
+      document.removeEventListener('touchend',   handleEnd)
     }
   }, [])
 
