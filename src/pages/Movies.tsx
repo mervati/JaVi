@@ -280,11 +280,11 @@ export function Movies() {
       {showSort && createPortal(
         <>
           <div
-            className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.6)' }}
+            className="fixed inset-0"
+            style={{ background: 'rgba(0,0,0,0.6)', zIndex: 9998 }}
             onClick={() => setShowSort(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl" style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none' }}>
+          <div className="fixed bottom-0 left-0 right-0 rounded-t-2xl" style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none', zIndex: 9999 }}>
             <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-5" style={{ background: '#333' }} />
             <p className="text-white font-bold text-sm px-5 mb-2">Ordenar por</p>
             {SORT_OPTIONS.map(opt => (
