@@ -291,7 +291,7 @@ export function Movies() {
               <button
                 key={opt.value}
                 onClick={() => { setSortBy(opt.value); setShowSort(false) }}
-                className="flex items-center justify-between w-full px-5 py-4 border-b border-[#1a1a1a] active:bg-[#1a1a1a]"
+                className="flex items-center justify-between w-full px-5 py-6 border-b border-[#1a1a1a] active:bg-[#1a1a1a]"
               >
                 <span className="text-sm" style={{ color: sortBy === opt.value ? '#f5b730' : '#fff' }}>{opt.label}</span>
                 <div
