@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getSimilar } from '../lib/tmdb'
+import { getDetails, getWatchProviders, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getSimilar, getVideos } from '../lib/tmdb'
 import { PosterImage } from '../components/PosterImage'
 import { useLibrary } from '../hooks/useLibrary'
 import { StarRating } from '../components/StarRating'
 import { RatingPrompt } from '../components/RatingPrompt'
+import { TrailerPlayer } from '../components/TrailerPlayer'
 
 interface Movie {
   id: number
@@ -37,6 +38,7 @@ export function MovieDetail() {
   const [providers, setProviders] = useState<Providers | null>(null)
   const [cast, setCast] = useState<any[]>([])
   const [similar, setSimilar] = useState<any[]>([])
+  const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [tab, setTab] = useState<'sobre' | 'elenco'>('sobre')
   const [loading, setLoading] = useState(true)
   const [showRating, setShowRating] = useState(false)
@@ -52,11 +54,18 @@ export function MovieDetail() {
       getWatchProviders(movieId, 'movie'),
       getCredits(movieId, 'movie'),
       getSimilar(movieId, 'movie'),
-    ]).then(([details, prov, credits, sim]) => {
+      getVideos(movieId, 'movie'),
+    ]).then(([details, prov, credits, sim, videos]) => {
       setMovie(details)
       setProviders(prov)
       setCast(credits.slice(0, 20))
       setSimilar(sim.slice(0, 20))
+      const yt = (videos as any[]).filter((v: any) => v.site === 'YouTube')
+      const t = yt.find((v: any) => v.type === 'Trailer' && v.official)
+        ?? yt.find((v: any) => v.type === 'Trailer')
+        ?? yt.find((v: any) => v.type === 'Teaser')
+        ?? yt[0]
+      setTrailerKey(t?.key ?? null)
       setLoading(false)
     })
   }, [movieId])
@@ -178,6 +187,12 @@ export function MovieDetail() {
 
       {tab === 'sobre' && (
         <div className="px-4 py-5">
+          {trailerKey && (
+            <div style={{ marginBottom: '20px' }}>
+              <TrailerPlayer videoKey={trailerKey} title={movie.title} />
+            </div>
+          )}
+
           {movie.genres?.length > 0 && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
               {movie.genres.map(g => (

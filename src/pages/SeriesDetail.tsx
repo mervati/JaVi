@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { fireSeriesConfetti } from '../lib/confetti'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar } from '../lib/tmdb'
+import { getSeriesDetails, getSeasonEpisodes, getBackdropUrl, getPosterUrl, getThumbUrl, getCredits, getWatchProviders, getSimilar, getVideos } from '../lib/tmdb'
 import { PosterImage } from '../components/PosterImage'
 import { EpisodeCheckbox } from '../components/EpisodeCheckbox'
 import { useEpisodes } from '../hooks/useEpisodes'
 import { useLibrary } from '../hooks/useLibrary'
 import { RatingPrompt } from '../components/RatingPrompt'
+import { TrailerPlayer } from '../components/TrailerPlayer'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 
 interface Episode {
@@ -501,6 +502,7 @@ export function SeriesDetail() {
   const [cast, setCast] = useState<any[]>([])
   const [providers, setProviders] = useState<any>(null)
   const [similar, setSimilar] = useState<any[]>([])
+  const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'sobre' | 'episodios'>('episodios')
   const [showRating, setShowRating] = useState(false)
@@ -555,11 +557,18 @@ export function SeriesDetail() {
       getCredits(seriesId, 'tv'),
       getWatchProviders(seriesId, 'tv'),
       getSimilar(seriesId, 'tv'),
-    ]).then(([data, credits, prov, sim]) => {
+      getVideos(seriesId, 'tv'),
+    ]).then(([data, credits, prov, sim, videos]) => {
       setSeries(data)
       setCast(credits.slice(0, 20))
       setProviders(prov)
       setSimilar(sim.slice(0, 20))
+      const yt = (videos as any[]).filter((v: any) => v.site === 'YouTube')
+      const t = yt.find((v: any) => v.type === 'Trailer' && v.official)
+        ?? yt.find((v: any) => v.type === 'Trailer')
+        ?? yt.find((v: any) => v.type === 'Teaser')
+        ?? yt[0]
+      setTrailerKey(t?.key ?? null)
       setLoading(false)
     })
   }, [seriesId])
@@ -638,6 +647,12 @@ export function SeriesDetail() {
 
       {tab === 'sobre' && (
         <div className="px-4 py-5">
+          {trailerKey && (
+            <div style={{ marginBottom: '20px' }}>
+              <TrailerPlayer videoKey={trailerKey} title={series.name} />
+            </div>
+          )}
+
           {series.genres?.length > 0 && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px', marginBottom: '16px' }}>
               {series.genres.map(g => (
