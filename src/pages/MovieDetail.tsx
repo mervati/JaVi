@@ -187,13 +187,6 @@ export function MovieDetail() {
 
       {tab === 'sobre' && (
         <div className="px-4 py-5">
-          {trailerKey && (
-            <div style={{ marginBottom: '20px' }}>
-              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Trailer</p>
-              <TrailerPlayer videoKey={trailerKey} title={movie.title} />
-            </div>
-          )}
-
           {movie.genres?.length > 0 && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
               {movie.genres.map(g => (
@@ -223,6 +216,13 @@ export function MovieDetail() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {trailerKey && (
+            <div style={{ marginBottom: '32px' }}>
+              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-3">Trailer</p>
+              <TrailerPlayer videoKey={trailerKey} title={movie.title} />
             </div>
           )}
 

@@ -647,13 +647,6 @@ export function SeriesDetail() {
 
       {tab === 'sobre' && (
         <div className="px-4 py-5">
-          {trailerKey && (
-            <div style={{ marginBottom: '20px' }}>
-              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Trailer</p>
-              <TrailerPlayer videoKey={trailerKey} title={series.name} />
-            </div>
-          )}
-
           {series.genres?.length > 0 && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px', marginBottom: '16px' }}>
               {series.genres.map(g => (
@@ -712,6 +705,13 @@ export function SeriesDetail() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {trailerKey && (
+            <div style={{ marginBottom: '32px' }}>
+              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-3">Trailer</p>
+              <TrailerPlayer videoKey={trailerKey} title={series.name} />
             </div>
           )}
 
