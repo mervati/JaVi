@@ -657,8 +657,8 @@ export function SeriesDetail() {
             </div>
           )}
           {series.overview
-            ? <p className="text-[#aaa] text-sm leading-relaxed mb-5">{series.overview}</p>
-            : <p className="text-[#555] text-sm mb-5">Sem sinopse disponível.</p>
+            ? <p className="text-[#aaa] text-sm leading-relaxed mb-8">{series.overview}</p>
+            : <p className="text-[#555] text-sm mb-8">Sem sinopse disponível.</p>
           }
 
           {providers && (() => {
