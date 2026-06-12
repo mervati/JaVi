@@ -656,6 +656,7 @@ export function SeriesDetail() {
               ))}
             </div>
           )}
+          <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
           {series.overview
             ? <p className="text-[#aaa] text-sm leading-relaxed mb-5">{series.overview}</p>
             : <p className="text-[#555] text-sm mb-5">Sem sinopse disponível.</p>

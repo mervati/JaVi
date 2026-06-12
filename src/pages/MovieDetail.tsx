@@ -197,9 +197,10 @@ export function MovieDetail() {
             </div>
           )}
 
+          <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
           {movie.overview ? (
             <p className="text-[#aaa] text-sm leading-relaxed" style={{ marginBottom: '24px' }}>{movie.overview}</p>
-          ) : null}
+          ) : <p className="text-[#555] text-sm" style={{ marginBottom: '24px' }}>Sem sinopse disponível.</p>}
 
           {allProviders.length > 0 && (
             <div style={{ marginBottom: '32px' }}>
