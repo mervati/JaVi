@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 export function useEpisodes(seriesId: number) {
   const { user } = useAuth()
   const [watched, setWatched] = useState<Set<string>>(new Set())
+  const [watchedAt, setWatchedAt] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!user || !seriesId) return
@@ -13,8 +14,10 @@ export function useEpisodes(seriesId: number) {
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
         setWatched(new Set(snap.data().watched ?? []))
+        setWatchedAt(snap.data().watchedAt ?? {})
       } else {
         setWatched(new Set())
+        setWatchedAt({})
       }
     })
     return unsub
@@ -28,25 +31,38 @@ export function useEpisodes(seriesId: number) {
     if (!user) return
     const ref = doc(db, 'users', user.uid, 'series_progress', String(seriesId))
     const next = new Set(watched)
+    const nextWatchedAt = { ...watchedAt }
     const k = key(season, episode)
-    if (next.has(k)) next.delete(k)
-    else next.add(k)
-    await setDoc(ref, { watched: Array.from(next) }, { merge: true })
+    if (next.has(k)) {
+      next.delete(k)
+      delete nextWatchedAt[k]
+    } else {
+      next.add(k)
+      nextWatchedAt[k] = Date.now()
+    }
+    await setDoc(ref, { watched: Array.from(next), watchedAt: nextWatchedAt }, { merge: true })
   }
 
   async function markSeason(season: number, episodeNumbers: number[], asWatched: boolean) {
     if (!user) return
     const ref = doc(db, 'users', user.uid, 'series_progress', String(seriesId))
-    let next: Set<string>
+    const next = new Set(watched)
+    const nextWatchedAt = { ...watchedAt }
+    const now = Date.now()
     if (asWatched) {
-      next = new Set(watched)
-      episodeNumbers.forEach(ep => next.add(key(season, ep)))
+      episodeNumbers.forEach(ep => {
+        const k = key(season, ep)
+        next.add(k)
+        if (!nextWatchedAt[k]) nextWatchedAt[k] = now
+      })
     } else {
-      // remove todos os episódios da temporada pelo prefixo — evita mismatch de numeração
-      const prefix = `${season}-`
-      next = new Set([...watched].filter(k => !k.startsWith(prefix)))
+      episodeNumbers.forEach(ep => {
+        const k = key(season, ep)
+        next.delete(k)
+        delete nextWatchedAt[k]
+      })
     }
-    await setDoc(ref, { watched: Array.from(next) }, { merge: true })
+    await setDoc(ref, { watched: Array.from(next), watchedAt: nextWatchedAt }, { merge: true })
   }
 
   function isWatched(season: number, episode: number) {
@@ -61,5 +77,5 @@ export function useEpisodes(seriesId: number) {
     return count
   }
 
-  return { isWatched, toggleEpisode, markSeason, countWatchedInSeason, watchedCount: watched.size }
+  return { isWatched, toggleEpisode, markSeason, countWatchedInSeason, watchedCount: watched.size, watchedAt }
 }

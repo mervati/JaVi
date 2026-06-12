@@ -158,6 +158,93 @@ function AbandonedSection({ items }: { items: LibraryItem[] }) {
   )
 }
 
+// ── histórico ────────────────────────────────────────────────────────────────
+
+interface HistoryEntry {
+  seriesId: number
+  key: string
+  ts: number
+}
+
+function formatDateGroup(ts: number): string {
+  const d = new Date(ts)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today.getTime() - 86400000)
+  const day = new Date(d); day.setHours(0, 0, 0, 0)
+  if (day.getTime() === today.getTime()) return 'Hoje'
+  if (day.getTime() === yesterday.getTime()) return 'Ontem'
+  return d.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: day.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+  })
+}
+
+function fmt2(n: number) { return String(n).padStart(2, '0') }
+
+function HistorySection({ entries, items }: { entries: HistoryEntry[]; items: LibraryItem[] }) {
+  const navigate = useNavigate()
+
+  if (entries.length === 0) {
+    return (
+      <div style={{ paddingTop: '32px', paddingBottom: '8px' }}>
+        <p className="text-white font-black text-xl px-4 mb-2">Histórico</p>
+        <p className="text-[#444] text-sm px-4 py-4">Nenhum episódio registrado ainda.</p>
+      </div>
+    )
+  }
+
+  // agrupa por data
+  const groups: { label: string; entries: HistoryEntry[] }[] = []
+  let currentLabel = ''
+  entries.forEach(e => {
+    const label = formatDateGroup(e.ts)
+    if (label !== currentLabel) { currentLabel = label; groups.push({ label, entries: [] }) }
+    groups[groups.length - 1].entries.push(e)
+  })
+
+  return (
+    <div style={{ paddingTop: '32px', paddingBottom: '8px' }}>
+      <p className="text-white font-black text-xl px-4 mb-4">Histórico</p>
+      {groups.map(group => (
+        <div key={group.label} style={{ marginBottom: '20px' }}>
+          <p className="text-[#f5b730] text-[10px] font-bold uppercase tracking-widest px-4 mb-2">
+            {group.label}
+          </p>
+          {group.entries.map(entry => {
+            const [season, ep] = entry.key.split('-').map(Number)
+            const series = items.find(i => i.type === 'tv' && i.id === entry.seriesId)
+            const time = new Date(entry.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            return (
+              <button
+                key={`${entry.seriesId}-${entry.key}`}
+                onClick={() => navigate(`/series/${entry.seriesId}`)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 active:bg-[#111] transition-colors text-left"
+              >
+                <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
+                  {series?.poster
+                    ? <img src={getPosterUrl(series.poster) ?? ''} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-[#444] text-lg font-bold">?</div>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-bold leading-tight line-clamp-1">
+                    {series?.title ?? `Série #${entry.seriesId}`}
+                  </p>
+                  <p className="text-[#555] text-xs mt-0.5">
+                    T{fmt2(season)} · E{fmt2(ep)}
+                  </p>
+                </div>
+                <p className="text-[#444] text-xs font-medium flex-shrink-0">{time}</p>
+              </button>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 export function Profile() {
@@ -188,14 +275,22 @@ export function Profile() {
   const watching  = items.filter(i => i.status === 'watching')
   const abandoned = items.filter(i => i.status === 'abandoned')
 
-  // episódios assistidos (de todas as séries)
+  // episódios assistidos + histórico (mesmo listener)
   const [totalEpisodes, setTotalEpisodes] = useState<number | null>(null)
+  const [epHistory, setEpHistory] = useState<HistoryEntry[]>([])
   useEffect(() => {
     if (!user) return
     const q = query(collection(db, 'users', user.uid, 'series_progress'))
     const unsub = onSnapshot(q, snap => {
-      const total = snap.docs.reduce((sum, d) => sum + ((d.data().watched ?? []).length), 0)
-      setTotalEpisodes(total)
+      setTotalEpisodes(snap.docs.reduce((sum, d) => sum + ((d.data().watched ?? []).length), 0))
+      const entries: HistoryEntry[] = []
+      snap.docs.forEach(d => {
+        const seriesId = Number(d.id)
+        const wa: Record<string, number> = d.data().watchedAt ?? {}
+        Object.entries(wa).forEach(([k, ts]) => entries.push({ seriesId, key: k, ts }))
+      })
+      entries.sort((a, b) => b.ts - a.ts)
+      setEpHistory(entries.slice(0, 150))
     })
     return unsub
   }, [user])
@@ -384,6 +479,11 @@ export function Profile() {
             </StatCard>
           ))}
         </div>
+      </div>
+
+      {/* histórico de episódios */}
+      <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '8px' }}>
+        <HistorySection entries={epHistory} items={items} />
       </div>
 
       {/* toggle de notificações push */}
