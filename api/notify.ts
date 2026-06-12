@@ -22,12 +22,12 @@ function todayUTC(): string {
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const TMDB_KEY = process.env.VITE_TMDB_API_KEY
+  const TMDB_TOKEN = process.env.VITE_TMDB_TOKEN
   const VAPID_PUBLIC = process.env.VITE_VAPID_PUBLIC_KEY
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY
   const VAPID_EMAIL = process.env.VAPID_EMAIL ?? 'mailto:javi@app.com'
 
-  if (!TMDB_KEY || !VAPID_PUBLIC || !VAPID_PRIVATE) {
+  if (!TMDB_TOKEN || !VAPID_PUBLIC || !VAPID_PRIVATE) {
     return res.status(500).json({ error: 'Variáveis de ambiente ausentes' })
   }
 
@@ -56,7 +56,8 @@ export default async function handler(req: any, res: any) {
         let series: any
         try {
           const resp = await fetch(
-            `https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_KEY}&language=pt-BR`
+            `https://api.themoviedb.org/3/tv/${seriesId}?language=pt-BR`,
+            { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } }
           )
           series = await resp.json()
         } catch {
@@ -82,7 +83,7 @@ export default async function handler(req: any, res: any) {
           const sub = subDoc.data()
           try {
             await webPush.sendNotification(
-              { endpoint: sub.endpoint as string, keys: sub.keys as webPush.RequestOptions['vapidDetails'] },
+              { endpoint: sub.endpoint as string, keys: sub.keys as { p256dh: string; auth: string } },
               payload
             )
             sent++
