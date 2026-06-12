@@ -189,6 +189,7 @@ export function MovieDetail() {
         <div className="px-4 py-5">
           {trailerKey && (
             <div style={{ marginBottom: '20px' }}>
+              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Trailer</p>
               <TrailerPlayer videoKey={trailerKey} title={movie.title} />
             </div>
           )}
