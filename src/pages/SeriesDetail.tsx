@@ -689,7 +689,7 @@ export function SeriesDetail() {
 
           {cast.length > 0 && (
             <div style={{ marginBottom: '32px' }}>
-              <p className="text-white font-bold text-sm mb-3">Elenco</p>
+              <p className="text-white text-xs font-bold mb-3 uppercase tracking-wider">Elenco</p>
               <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
                 {cast.map(actor => (
                   <div key={actor.id} className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5">
