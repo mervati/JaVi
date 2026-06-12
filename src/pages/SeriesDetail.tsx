@@ -657,8 +657,8 @@ export function SeriesDetail() {
             </div>
           )}
           {series.overview
-            ? <p className="text-[#aaa] text-sm leading-relaxed mb-8">{series.overview}</p>
-            : <p className="text-[#555] text-sm mb-8">Sem sinopse disponível.</p>
+            ? <p className="text-[#aaa] text-sm leading-relaxed mb-5">{series.overview}</p>
+            : <p className="text-[#555] text-sm mb-5">Sem sinopse disponível.</p>
           }
 
           {providers && (() => {
@@ -668,7 +668,7 @@ export function SeriesDetail() {
               ...(providers.buy ?? []),
             ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.provider_id === p.provider_id) === i)
             return all.length > 0 ? (
-              <div style={{ marginBottom: '32px' }}>
+              <div style={{ marginTop: '28px', marginBottom: '32px' }}>
                 <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
                 <div className="flex gap-3 flex-wrap">
                   {all.map((p: any) => (
