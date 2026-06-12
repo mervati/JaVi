@@ -210,17 +210,29 @@ function SwipeableEpisode({
 
         {selectionMode ? (
           <div style={{
-            width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
-            background: selected ? '#f5b730' : 'transparent',
-            border: `2px solid ${selected ? '#f5b730' : '#444'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.15s ease',
+            position: 'relative',
+            height: '1.6em',
+            width: '1.6em',
+            fontSize: '26px',
+            borderRadius: '50%',
+            flexShrink: 0,
+            background: selected
+              ? 'linear-gradient(144deg, #c98000, #f5b730 50%, #ffd55a)'
+              : '#ffeded38',
+            opacity: selected ? 0.9 : 0.4,
+            transition: 'all 0.2s ease',
           }}>
-            {selected && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            )}
+            <div style={{
+              position: 'absolute',
+              left: '0.61em',
+              top: '0.43em',
+              width: '0.25em',
+              height: '0.5em',
+              border: `solid ${selected ? '#fff' : 'rgba(255,255,255,0.45)'}`,
+              borderWidth: '0 0.15em 0.15em 0',
+              transform: 'rotate(45deg)',
+              transition: 'border-color 0.2s ease',
+            }} />
           </div>
         ) : (
           <EpisodeCheckbox checked={watched} onChange={onTap} />
