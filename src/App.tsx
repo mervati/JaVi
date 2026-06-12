@@ -2,16 +2,17 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-ro
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { RefreshContext } from './contexts/RefreshContext'
 import { LoginPage } from './components/LoginPage'
-import { Home } from './pages/Home'
-import { Search } from './pages/Search'
-import { Series } from './pages/Series'
-import { Movies } from './pages/Movies'
-import { Profile } from './pages/Profile'
-import { SeriesDetail } from './pages/SeriesDetail'
-import { MovieDetail } from './pages/MovieDetail'
-import { StatusList } from './pages/StatusList'
 import { BottomNav } from './components/BottomNav'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+
+const Home        = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })))
+const Search      = lazy(() => import('./pages/Search').then(m => ({ default: m.Search })))
+const Series      = lazy(() => import('./pages/Series').then(m => ({ default: m.Series })))
+const Movies      = lazy(() => import('./pages/Movies').then(m => ({ default: m.Movies })))
+const Profile     = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })))
+const SeriesDetail = lazy(() => import('./pages/SeriesDetail').then(m => ({ default: m.SeriesDetail })))
+const MovieDetail  = lazy(() => import('./pages/MovieDetail').then(m => ({ default: m.MovieDetail })))
+const StatusList   = lazy(() => import('./pages/StatusList').then(m => ({ default: m.StatusList })))
 
 const PTR_THRESHOLD = 72
 
@@ -151,16 +152,22 @@ function AppContent() {
           className="flex-1 overflow-y-auto overflow-x-hidden"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 70px)', overscrollBehaviorY: 'contain' }}
         >
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/explorar" element={<Search />} />
-            <Route path="/tv" element={<Series />} />
-            <Route path="/movies" element={<Movies />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/series/:id" element={<SeriesDetail />} />
-            <Route path="/movie/:id" element={<MovieDetail />} />
-            <Route path="/lista/:status" element={<StatusList />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/explorar" element={<Search />} />
+              <Route path="/tv" element={<Series />} />
+              <Route path="/movies" element={<Movies />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/series/:id" element={<SeriesDetail />} />
+              <Route path="/movie/:id" element={<MovieDetail />} />
+              <Route path="/lista/:status" element={<StatusList />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <BottomNav />
