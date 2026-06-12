@@ -15,7 +15,7 @@ export function RatingPrompt({ title, onSave, onSkip }: Props) {
       <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onSkip} />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl flex flex-col items-center"
-        style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none', padding: '24px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+        style={{ background: '#0f0f0f', border: '1px solid #222', borderBottom: 'none', padding: '24px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom) + 70px + 24px)' }}
       >
         <div className="w-10 h-1 rounded-full mb-6" style={{ background: '#333' }} />
 
