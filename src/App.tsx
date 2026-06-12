@@ -111,7 +111,7 @@ function AppContent() {
 
   return (
     <RefreshContext.Provider value={registerRefresh}>
-      <div className="flex flex-col" style={{ height: '100svh' }}>
+      <div className="flex flex-col" style={{ height: '100dvh' }}>
         {!isDetail && (
           <header className="flex-shrink-0 flex items-center justify-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] z-40"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px' }}>

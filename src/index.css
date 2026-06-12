@@ -90,8 +90,8 @@ body {
 }
 
 #root {
-  min-height: 100svh;
-  padding-bottom: env(safe-area-inset-bottom);
+  height: 100dvh;
+  height: -webkit-fill-available;
 }
 
 .boton-elegante {
