@@ -38,6 +38,7 @@ interface Series {
   seasons: Season[]
   number_of_seasons: number
   genres: { id: number; name: string }[]
+  vote_average: number
 }
 
 interface PendingEp {
@@ -629,6 +630,7 @@ export function SeriesDetail() {
             {series.number_of_seasons} temporada{series.number_of_seasons !== 1 ? 's' : ''}
             {startYear && ` • ${startYear}${endYear && endYear !== startYear ? `–${endYear}` : endYear ? '' : '–'}`}
             {series.status === 'Ended' ? ' • Encerrada' : ' • Em andamento'}
+            {series.vote_average > 0 ? ` • ★ ${series.vote_average.toFixed(1)}` : ''}
           </p>
         </div>
       </div>
