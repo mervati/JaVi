@@ -6,8 +6,8 @@ export function BottomNav() {
   const inactive = 'text-[#444]'
 
   return (
-    <nav className="flex-shrink-0 bg-[#0a0a0a] border-t border-[#1a1a1a] flex justify-around z-50"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav className="bg-[#0a0a0a] border-t border-[#1a1a1a] flex justify-around z-50"
+      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
       <NavLink to="/" end className={({ isActive }) => `${base} ${isActive ? active : inactive}`}>
         {({ isActive }) => (<>
