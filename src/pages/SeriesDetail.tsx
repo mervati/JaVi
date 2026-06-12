@@ -656,7 +656,7 @@ export function SeriesDetail() {
               ))}
             </div>
           )}
-          <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
+          <p className="text-white text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
           {series.overview
             ? <p className="text-[#aaa] text-sm leading-relaxed mb-5">{series.overview}</p>
             : <p className="text-[#555] text-sm mb-5">Sem sinopse disponível.</p>
@@ -670,7 +670,7 @@ export function SeriesDetail() {
             ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.provider_id === p.provider_id) === i)
             return all.length > 0 ? (
               <div style={{ marginTop: '28px', marginBottom: '32px' }}>
-                <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
+                <p className="text-white text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
                 <div className="flex gap-3 flex-wrap">
                   {all.map((p: any) => (
                     <div key={p.provider_id} className="flex flex-col items-center gap-1">
@@ -711,14 +711,14 @@ export function SeriesDetail() {
 
           {trailerKey && (
             <div style={{ marginBottom: '32px' }}>
-              <p className="text-[#888] text-xs font-bold uppercase tracking-wider mb-3">Trailer</p>
+              <p className="text-white text-xs font-bold uppercase tracking-wider mb-3">Trailer</p>
               <TrailerPlayer videoKey={trailerKey} title={series.name} />
             </div>
           )}
 
           {similar.length > 0 && (
             <div style={{ marginBottom: '16px' }}>
-              <p className="text-[#888] text-xs font-bold mb-3 uppercase tracking-wider">Títulos similares</p>
+              <p className="text-white text-xs font-bold mb-3 uppercase tracking-wider">Títulos similares</p>
               <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
                 {similar.map(item => (
                   <div
