@@ -103,11 +103,19 @@ function SwipeableEpisode({
   seasonNumber,
   watched,
   onTap,
+  onLongPress,
+  selectionMode,
+  selected,
+  onSelect,
 }: {
   ep: Episode
   seasonNumber: number
   watched: boolean
   onTap: () => void
+  onLongPress: () => void
+  selectionMode: boolean
+  selected: boolean
+  onSelect: () => void
 }) {
   const [offsetX, setOffsetX] = useState(0)
   const startX = useRef(0)
@@ -116,18 +124,34 @@ function SwipeableEpisode({
   const dir = useRef<'h' | 'v' | null>(null)
   const THRESHOLD = -80
   const MAX_SWIPE = -90
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFired = useRef(false)
 
   function onTouchStart(e: React.TouchEvent) {
     startX.current = e.touches[0].clientX
     startY.current = e.touches[0].clientY
     dragging.current = true
     dir.current = null
+    longPressFired.current = false
+    if (!selectionMode) {
+      longPressTimer.current = setTimeout(() => {
+        longPressFired.current = true
+        dragging.current = false
+        setOffsetX(0)
+        onLongPress()
+      }, 500)
+    }
   }
 
   function onTouchMove(e: React.TouchEvent) {
     if (!dragging.current) return
     const dx = e.touches[0].clientX - startX.current
     const dy = e.touches[0].clientY - startY.current
+    if (longPressTimer.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    if (selectionMode) return
     if (dir.current === null) {
       if (Math.abs(dx) > Math.abs(dy) + 4) dir.current = 'h'
       else if (Math.abs(dy) > Math.abs(dx) + 4) { dir.current = 'v'; dragging.current = false; return }
@@ -138,28 +162,37 @@ function SwipeableEpisode({
   }
 
   function onTouchEnd() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    if (longPressFired.current) { dragging.current = false; return }
     dragging.current = false
+    if (selectionMode) {
+      setOffsetX(0)
+      onSelect()
+      return
+    }
     if (offsetX <= THRESHOLD) onTap()
     setOffsetX(0)
   }
 
   return (
     <div className="relative overflow-hidden border-t border-[#111]">
-      <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${watched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
-        {watched
-          ? <FaEyeSlash className="text-white text-2xl" />
-          : <FaEye className="text-white text-2xl" />
-        }
-      </div>
+      {!selectionMode && (
+        <div className={`absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center ${watched ? 'bg-[#e53e3e]' : 'bg-[#5cb85c]'}`}>
+          {watched
+            ? <FaEyeSlash className="text-white text-2xl" />
+            : <FaEye className="text-white text-2xl" />
+          }
+        </div>
+      )}
 
       <div
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          transform: `translateX(${offsetX}px)`,
-          transition: dragging.current ? 'none' : 'transform 0.25s ease',
-          background: '#0a0a0a',
+          transform: selectionMode ? 'none' : `translateX(${offsetX}px)`,
+          transition: (selectionMode || dragging.current) ? 'none' : 'transform 0.25s ease',
+          background: selectionMode && selected ? '#1a1500' : '#0a0a0a',
         }}
         className="flex items-center gap-3 px-5 py-3"
       >
@@ -175,7 +208,23 @@ function SwipeableEpisode({
           {ep.runtime && <p className="text-[#555] text-xs mt-0.5">{ep.runtime} min</p>}
         </div>
 
-        <EpisodeCheckbox checked={watched} onChange={onTap} />
+        {selectionMode ? (
+          <div style={{
+            width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+            background: selected ? '#f5b730' : 'transparent',
+            border: `2px solid ${selected ? '#f5b730' : '#444'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s ease',
+          }}>
+            {selected && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+        ) : (
+          <EpisodeCheckbox checked={watched} onChange={onTap} />
+        )}
       </div>
     </div>
   )
@@ -195,6 +244,8 @@ function SeasonRow({
   const [loading, setLoading] = useState(false)
   const [marking, setMarking] = useState(false)
   const [pending, setPending] = useState<PendingEp | null>(null)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedEps, setSelectedEps] = useState<Set<number>>(new Set())
   const { isWatched, toggleEpisode, markSeason, countWatchedInSeason } = useEpisodes(seriesId)
   const neverAskKey = `javi_noask_${seriesId}`
   const neverAsk = localStorage.getItem(neverAskKey) === 'true'
@@ -204,6 +255,35 @@ function SeasonRow({
   useEffect(() => {
     return () => { if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current) }
   }, [])
+
+  function handleCancelSelection() {
+    setSelectionMode(false)
+    setSelectedEps(new Set())
+  }
+
+  function handleLongPress(episodeIdx: number) {
+    setSelectionMode(true)
+    setSelectedEps(new Set([episodeIdx]))
+  }
+
+  function handleSelect(episodeIdx: number) {
+    setSelectedEps(prev => {
+      const next = new Set(prev)
+      if (next.has(episodeIdx)) next.delete(episodeIdx)
+      else next.add(episodeIdx)
+      return next
+    })
+  }
+
+  async function handleConfirmSelection() {
+    if (selectedEps.size === 0) { handleCancelSelection(); return }
+    const epList = [...selectedEps]
+    const allSelectedWatched = epList.every(idx => isWatched(season.season_number, idx))
+    await markSeason(season.season_number, epList, !allSelectedWatched)
+    setSelectionMode(false)
+    setSelectedEps(new Set())
+    onEpisodeWatched()
+  }
 
   const watched = countWatchedInSeason(season.season_number, season.episode_count)
   const allWatched = watched === season.episode_count && season.episode_count > 0
@@ -218,6 +298,7 @@ function SeasonRow({
   }
 
   async function handleOpen() {
+    if (open && selectionMode) handleCancelSelection()
     if (!open && episodes.length === 0) {
       setLoading(true)
       const data = await getSeasonEpisodes(seriesId, season.season_number)
@@ -294,6 +375,8 @@ function SeasonRow({
     scheduleScrollToNext(epIdx)
   }
 
+  const selectedAllWatched = selectedEps.size > 0 && [...selectedEps].every(idx => isWatched(season.season_number, idx))
+
   return (
     <>
       {pending && (
@@ -302,6 +385,43 @@ function SeasonRow({
           onJustThis={handleJustThis}
           onNever={handleNever}
         />
+      )}
+
+      {selectionMode && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 px-4"
+          style={{
+            background: '#111',
+            borderTop: '1px solid #2a2a2a',
+            paddingTop: '12px',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 70px + 12px)',
+          }}
+        >
+          <button
+            onClick={handleCancelSelection}
+            className="flex-1 py-3 rounded-xl text-sm font-bold"
+            style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmSelection}
+            className="flex-1 py-3 rounded-xl text-sm font-bold"
+            style={{
+              background: selectedEps.size > 0 ? '#f5b730' : '#222',
+              color: selectedEps.size > 0 ? '#000' : '#555',
+              border: '1px solid #2a2a2a',
+              transition: 'all 0.15s',
+            }}
+          >
+            {selectedEps.size === 0
+              ? 'Selecionar episódios'
+              : selectedAllWatched
+                ? `Desmarcar ${selectedEps.size}`
+                : `Marcar ${selectedEps.size} como assistidos`
+            }
+          </button>
+        </div>
       )}
 
       <div className="border-b border-[#1a1a1a]">
@@ -319,7 +439,7 @@ function SeasonRow({
 
             <div className="flex items-center gap-3">
               <span className="text-[#888] text-sm">{watched}/{season.episode_count}</span>
-              <EpisodeCheckbox checked={allWatched} onChange={handleMarkSeason} disabled={marking} />
+              <EpisodeCheckbox checked={allWatched} onChange={handleMarkSeason} disabled={marking || selectionMode} />
             </div>
           </div>
 
@@ -347,6 +467,10 @@ function SeasonRow({
                     seasonNumber={season.season_number}
                     watched={isWatched(season.season_number, idx + 1)}
                     onTap={() => handleEpisodeTap(ep, idx + 1)}
+                    onLongPress={() => handleLongPress(idx + 1)}
+                    selectionMode={selectionMode}
+                    selected={selectedEps.has(idx + 1)}
+                    onSelect={() => handleSelect(idx + 1)}
                   />
                 </div>
               ))
