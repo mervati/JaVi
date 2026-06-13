@@ -337,10 +337,8 @@ export function Profile() {
       {/* cabeçalho */}
       <div className="flex items-center gap-4 mb-8 px-4">
         {user?.photoURL
-          ? <img src={user.photoURL} alt="" className="w-16 h-16 rounded-full" />
-          : <div className="w-16 h-16 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[#555] text-2xl font-bold">
-              {user?.displayName?.[0] ?? '?'}
-            </div>
+          ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="w-16 h-16 rounded-full" />
+          : <img src="/icon-192.png" alt="JáVi" className="w-16 h-16 rounded-full" />
         }
         <div>
           <p className="text-white font-bold text-lg">{user?.displayName}</p>

@@ -4,7 +4,7 @@ import {
   sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink,
   type User,
 } from 'firebase/auth'
-import { auth, provider, githubProvider } from '../lib/firebase'
+import { auth, provider } from '../lib/firebase'
 
 const EMAIL_KEY = 'javi_email_link'
 
@@ -12,10 +12,8 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   loginError: string | null
-  emailLinkSent: boolean
   login: () => Promise<void>
-  loginWithGithub: () => Promise<void>
-  loginWithEmail: (email: string) => Promise<void>
+  loginWithEmail: (email: string) => Promise<boolean>
   logout: () => Promise<void>
 }
 
@@ -25,15 +23,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [loginError, setLoginError] = useState<string | null>(null)
-  const [emailLinkSent, setEmailLinkSent] = useState(false)
 
   useEffect(() => {
     getRedirectResult(auth).catch(() => {})
 
-    // Completa login via magic link se o app abriu por um link de email
     if (isSignInWithEmailLink(auth, window.location.href)) {
       const saved = localStorage.getItem(EMAIL_KEY) ?? ''
-      const email = saved || window.prompt('Confirme seu e-mail para entrar:') ?? ''
+      const email = (saved || window.prompt('Confirme seu e-mail para entrar:')) ?? ''
       if (email) {
         signInWithEmailLink(auth, email, window.location.href)
           .then(() => localStorage.removeItem(EMAIL_KEY))
@@ -58,17 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function loginWithGithub() {
-    setLoginError(null)
-    try {
-      await signInWithPopup(auth, githubProvider)
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') return
-      setLoginError('Não foi possível entrar com o GitHub. Tente outro método.')
-    }
-  }
-
-  async function loginWithEmail(email: string) {
+  async function loginWithEmail(email: string): Promise<boolean> {
     setLoginError(null)
     try {
       await sendSignInLinkToEmail(auth, email, {
@@ -76,9 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         handleCodeInApp: true,
       })
       localStorage.setItem(EMAIL_KEY, email)
-      setEmailLinkSent(true)
+      return true
     } catch {
       setLoginError('Não foi possível enviar o e-mail. Verifique o endereço.')
+      return false
     }
   }
 
@@ -87,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginError, emailLinkSent, login, loginWithGithub, loginWithEmail, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginError, login, loginWithEmail, logout }}>
       {children}
     </AuthContext.Provider>
   )

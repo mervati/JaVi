@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
 
 const firebaseConfig = {
@@ -15,7 +15,6 @@ const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
 export const provider = new GoogleAuthProvider()
-export const githubProvider = new GithubAuthProvider()
 
 // persistência offline: dados da biblioteca ficam no IndexedDB
 export const db = initializeFirestore(app, {
