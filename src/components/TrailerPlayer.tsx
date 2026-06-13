@@ -5,7 +5,7 @@ let stopCurrent: (() => void) | null = null
 
 export function TrailerPlayer({ videoKey, title }: { videoKey: string; title: string }) {
   const [playing, setPlaying] = useState(false)
-  const stopRef = useRef<() => void>()
+  const stopRef = useRef<(() => void) | undefined>(undefined)
   stopRef.current = () => setPlaying(false)
 
   function handlePlay() {

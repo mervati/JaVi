@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getPosterUrl, getWatchProviders } from '../lib/tmdb'
+import { getPosterUrl } from '../lib/tmdb'
 import { PosterImage } from './PosterImage'
 import { useLibrary, type LibraryItem } from '../hooks/useLibrary'
 import { useAuth } from '../contexts/AuthContext'
@@ -22,8 +21,6 @@ export function MediaCard({ media }: Props) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { saveItem, removeItem, getItem } = useLibrary()
-  const [expanded, setExpanded] = useState(false)
-  const [providers, setProviders] = useState<{ link: string; flatrate?: { logo_path: string; provider_name: string }[] } | null>(null)
 
   const item = getItem(media.id, media.media_type)
   const title = media.title ?? media.name ?? ''
@@ -62,13 +59,6 @@ export function MediaCard({ media }: Props) {
     }
   }
 
-  async function toggleExpanded() {
-    if (!expanded && !providers) {
-      const data = await getWatchProviders(media.id, media.media_type)
-      setProviders(data)
-    }
-    setExpanded(v => !v)
-  }
 
   return (
     <div className="border-b border-[#1a1a1a]">
@@ -118,30 +108,6 @@ export function MediaCard({ media }: Props) {
         </div>
       </div>
 
-      {expanded && (
-        <div className="px-4 pb-4 bg-[#0f0f0f]">
-          {media.overview && (
-            <p className="text-[#888] text-sm mb-3 leading-relaxed line-clamp-3">{media.overview}</p>
-          )}
-          <div>
-            <p className="text-[#555] text-xs font-bold uppercase mb-2">Onde assistir no Brasil</p>
-            {providers === null
-              ? <p className="text-[#555] text-sm">Carregando...</p>
-              : providers?.flatrate?.length
-                ? <div className="flex flex-wrap gap-2">
-                    {providers.flatrate.map(p => (
-                      <a key={p.provider_name} href={providers.link} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 bg-[#1a1a1a] px-2 py-1 rounded-lg">
-                        <img src={`https://image.tmdb.org/t/p/w45${p.logo_path}`} alt={p.provider_name} className="w-5 h-5 rounded" />
-                        <span className="text-[#ccc] text-xs">{p.provider_name}</span>
-                      </a>
-                    ))}
-                  </div>
-                : <p className="text-[#555] text-sm">Não disponível no Brasil</p>
-            }
-          </div>
-        </div>
-      )}
     </div>
   )
 }
