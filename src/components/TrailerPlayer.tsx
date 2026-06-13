@@ -1,7 +1,21 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+
+// Guarda a função de parar o player atualmente ativo
+let stopCurrent: (() => void) | null = null
 
 export function TrailerPlayer({ videoKey, title }: { videoKey: string; title: string }) {
   const [playing, setPlaying] = useState(false)
+  const stopRef = useRef<() => void>()
+  stopRef.current = () => setPlaying(false)
+
+  function handlePlay() {
+    // Para o vídeo anterior, se houver
+    if (stopCurrent && stopCurrent !== stopRef.current) {
+      stopCurrent()
+    }
+    stopCurrent = stopRef.current ?? null
+    setPlaying(true)
+  }
 
   if (playing) {
     return (
@@ -19,7 +33,7 @@ export function TrailerPlayer({ videoKey, title }: { videoKey: string; title: st
 
   return (
     <button
-      onClick={() => setPlaying(true)}
+      onClick={handlePlay}
       className="active:opacity-80 w-full"
       style={{ position: 'relative', display: 'block', borderRadius: '12px', overflow: 'hidden', background: '#111' }}
     >

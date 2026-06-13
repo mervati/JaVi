@@ -57,9 +57,9 @@ export function MediaCard({ media }: Props) {
   function handleRowTap() {
     if (media.media_type === 'tv') {
       navigate(`/series/${media.id}`)
-      return
+    } else {
+      navigate(`/movie/${media.id}`)
     }
-    toggleExpanded()
   }
 
   async function toggleExpanded() {
