@@ -1,3 +1,3 @@
 @echo off
 cd /d D:\GitHub\javi-app
-npm run dev
+npm run dev -- --open

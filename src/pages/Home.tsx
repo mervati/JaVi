@@ -7,6 +7,7 @@ import { useEpisodes } from '../hooks/useEpisodes'
 import { PillTabs } from '../components/PillTabs'
 import { PosterImage } from '../components/PosterImage'
 import { useRegisterRefresh } from '../contexts/RefreshContext'
+import { TrailerPlayer } from '../components/TrailerPlayer'
 
 interface TmdbItem {
   id: number
@@ -283,28 +284,12 @@ function FeedTab() {
           key={item.id}
           className="bg-[#111] rounded-2xl overflow-hidden border border-[#1a1a1a]"
         >
-          <a
-            href={`https://www.youtube.com/watch?v=${item.videoKey}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block relative"
-          >
-            <img
-              src={`https://img.youtube.com/vi/${item.videoKey}/hqdefault.jpg`}
-              alt={item.videoName}
-              className="w-full aspect-video object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-            </div>
-            <span className="absolute top-2 right-2 bg-black/70 text-[#f5b730] text-[9px] font-bold px-2 py-0.5 rounded">
+          <div className="relative">
+            <TrailerPlayer videoKey={item.videoKey} title={item.videoName} />
+            <span className="absolute top-2 right-2 bg-black/70 text-[#f5b730] text-[9px] font-bold px-2 py-0.5 rounded pointer-events-none">
               {VIDEO_TYPE_PT[item.videoType] ?? item.videoType.toUpperCase()}
             </span>
-          </a>
+          </div>
 
           <div
             className="flex items-center gap-3 px-3 py-3 cursor-pointer active:bg-[#1a1a1a]"

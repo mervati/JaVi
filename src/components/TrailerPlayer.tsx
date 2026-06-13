@@ -7,7 +7,7 @@ export function TrailerPlayer({ videoKey, title }: { videoKey: string; title: st
     return (
       <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
         <iframe
-          src={`https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0`}
+          src={`https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0&cc_load_policy=1&cc_lang_pref=pt-BR`}
           title={title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
