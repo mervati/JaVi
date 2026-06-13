@@ -170,7 +170,7 @@ export function Search() {
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   const genRef = useRef(0)
-  const loadMoreRef = useRef<() => void>()
+  const loadMoreRef = useRef<(() => void) | undefined>(undefined)
 
   const hasFilters = selectedGenre !== null || selectedYear !== null || selectedRating !== null || selectedType !== null
   const mode = searched ? 'search' : hasFilters ? 'discover' : 'trending'
