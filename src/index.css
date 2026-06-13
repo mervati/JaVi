@@ -284,3 +284,109 @@ body {
   text-align: center;
   white-space: nowrap;
 }
+
+/* ── Login Form ── */
+.jv-form {
+  padding: 20px;
+  background: #d3d3d3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  border-radius: 5px;
+  border: 2px solid #323232;
+  box-shadow: 4px 4px #323232;
+  width: 100%;
+  max-width: 290px;
+}
+
+.jv-form-title {
+  font-family: 'Dela Gothic One', sans-serif;
+  color: #323232;
+  font-size: 20px;
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.jv-form-title span {
+  font-family: 'Space Mono', monospace;
+  color: #666;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.jv-oauth-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 250px;
+  height: 40px;
+  border-radius: 5px;
+  border: 2px solid #323232;
+  background-color: #fff;
+  box-shadow: 4px 4px #323232;
+  font-size: 15px;
+  font-weight: 600;
+  color: #323232;
+  cursor: pointer;
+  transition: color 250ms;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.jv-oauth-btn::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%; width: 0;
+  background-color: #212121;
+  z-index: -1;
+  box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+  transition: width 250ms;
+}
+
+.jv-oauth-btn:hover { color: #e8e8e8; }
+.jv-oauth-btn:hover::before { width: 100%; }
+.jv-oauth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.jv-separator {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.jv-separator > div {
+  width: 90px; height: 3px;
+  border-radius: 5px;
+  background-color: #666;
+}
+.jv-separator > span {
+  color: #323232;
+  font-family: 'Space Mono', monospace;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.jv-email-input {
+  width: 250px;
+  height: 40px;
+  border-radius: 5px;
+  border: 2px solid #323232;
+  background-color: #fff;
+  box-shadow: 4px 4px #323232;
+  font-size: 15px;
+  font-weight: 600;
+  color: #323232;
+  padding: 5px 10px;
+  outline: none;
+}
+
+.jv-email-input:focus {
+  border-color: #2d8cf0;
+  box-shadow: 4px 4px #2d8cf0;
+}
