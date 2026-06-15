@@ -341,7 +341,7 @@ function CalendarioTab() {
   const [entries, setEntries] = useState<CalEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  const watching = items.filter(i => i.type === 'tv' && (i.status === 'watching' || i.status === 'watched'))
+  const watching = items.filter(i => i.type === 'tv' && (i.status === 'watching' || i.status === 'watched' || i.status === 'watchlist'))
   const watchingKey = watching.map(i => i.id).join(',')
 
   useEffect(() => {
@@ -351,6 +351,17 @@ function CalendarioTab() {
       watching.map(async item => {
         try {
           const details = await getSeriesDetails(item.id)
+          // Para watchlist: usa first_air_date se for futura como "próximo episódio"
+          if (item.status === 'watchlist') {
+            const today = new Date().toISOString().slice(0, 10)
+            const airDate = details.next_episode_to_air?.air_date ?? details.first_air_date ?? null
+            const isFuture = airDate && airDate > today
+            return {
+              item,
+              nextEp: isFuture ? { air_date: airDate, season_number: 1, episode_number: 1, name: 'Estreia' } : null,
+              seriesStatus: details.status ?? '',
+            } as CalEntry
+          }
           return { item, nextEp: details.next_episode_to_air ?? null, seriesStatus: details.status ?? '' } as CalEntry
         } catch {
           return { item, nextEp: null, seriesStatus: '' } as CalEntry
@@ -378,8 +389,8 @@ function CalendarioTab() {
 
   const withDate = [...entries.filter(e => e.nextEp?.air_date)]
     .sort((a, b) => a.nextEp!.air_date.localeCompare(b.nextEp!.air_date))
-  const noDate   = entries.filter(e => !e.nextEp?.air_date && e.seriesStatus !== 'Ended' && e.seriesStatus !== 'Canceled')
-  const ended    = entries.filter(e => !e.nextEp?.air_date && (e.seriesStatus === 'Ended' || e.seriesStatus === 'Canceled'))
+  const noDate   = entries.filter(e => !e.nextEp?.air_date && e.item.status !== 'watchlist' && e.seriesStatus !== 'Ended' && e.seriesStatus !== 'Canceled')
+  const ended    = entries.filter(e => !e.nextEp?.air_date && e.item.status !== 'watchlist' && (e.seriesStatus === 'Ended' || e.seriesStatus === 'Canceled'))
 
   const grouped: Record<string, CalEntry[]> = {}
   for (const entry of withDate) {
@@ -409,10 +420,16 @@ function CalendarioTab() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[#888] text-[11px] font-bold uppercase tracking-wide line-clamp-1 mb-0.5">{item.title}</p>
-                <p className="text-white font-black text-sm">
-                  T{String(nextEp!.season_number).padStart(2, '0')} | E{String(nextEp!.episode_number).padStart(2, '0')}
-                </p>
-                <p className="text-[#555] text-xs mt-0.5 line-clamp-1">{nextEp!.name}</p>
+                {nextEp!.name === 'Estreia' ? (
+                  <p className="text-[#f5b730] font-black text-sm">Estreia</p>
+                ) : (
+                  <>
+                    <p className="text-white font-black text-sm">
+                      T{String(nextEp!.season_number).padStart(2, '0')} | E{String(nextEp!.episode_number).padStart(2, '0')}
+                    </p>
+                    <p className="text-[#555] text-xs mt-0.5 line-clamp-1">{nextEp!.name}</p>
+                  </>
+                )}
               </div>
               <svg className="w-4 h-4 text-[#333] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -555,7 +572,7 @@ export function Series() {
   return (
     <div className="flex flex-col min-h-full">
       {/* sub-tabs */}
-      <div className="tabs-nav sticky top-0 bg-[#0a0a0a] z-30">
+      <div className="tabs-nav tabs-full sticky top-0 bg-[#0a0a0a] z-30">
         <button className={`btn ${tab === 'lista' ? 'btn-active' : ''}`} onClick={() => setTab('lista')}>
           Lista
         </button>

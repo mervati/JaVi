@@ -500,7 +500,7 @@ export function Home() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="tabs-nav sticky top-0 bg-[#0a0a0a] z-30">
+      <div className="tabs-nav tabs-full sticky top-0 bg-[#0a0a0a] z-30">
         {TABS.map(t => (
           <button
             key={t.key}

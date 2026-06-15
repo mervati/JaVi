@@ -1,14 +1,127 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
 import { UndoToast } from '../components/UndoToast'
 import { PosterImage } from '../components/PosterImage'
 import { useLibrary } from '../hooks/useLibrary'
-import { getPosterUrl } from '../lib/tmdb'
+import { getPosterUrl, getDetails } from '../lib/tmdb'
 import { StarRating } from '../components/StarRating'
 import { RatingPrompt } from '../components/RatingPrompt'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import type { LibraryItem } from '../hooks/useLibrary'
+
+function formatDateHeader(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const today = new Date(); today.setHours(12, 0, 0, 0)
+  const diff = Math.round((d.getTime() - today.getTime()) / 86400000)
+  if (diff <= 0) return 'Hoje'
+  if (diff === 1) return 'Amanhã'
+  if (diff <= 6) {
+    const wd = d.toLocaleDateString('pt-BR', { weekday: 'long' })
+    return wd.charAt(0).toUpperCase() + wd.slice(1)
+  }
+  return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '')
+}
+
+interface MovieCalEntry {
+  item: LibraryItem
+  releaseDate: string | null
+}
+
+function MoviesCalendarioTab() {
+  const { items } = useLibrary()
+  const navigate = useNavigate()
+  const [entries, setEntries] = useState<MovieCalEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const watchlist = items.filter(i => i.type === 'movie' && i.status === 'watchlist')
+  const watchlistKey = watchlist.map(i => i.id).join(',')
+
+  useEffect(() => {
+    if (!watchlistKey) { setEntries([]); setLoading(false); return }
+    setLoading(true)
+    Promise.all(
+      watchlist.map(async item => {
+        try {
+          const details = await getDetails(item.id, 'movie')
+          return { item, releaseDate: details.release_date ?? null } as MovieCalEntry
+        } catch {
+          return { item, releaseDate: null } as MovieCalEntry
+        }
+      })
+    ).then(results => { setEntries(results); setLoading(false) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlistKey])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-6 h-6 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (watchlist.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20 px-8">
+        <p className="text-[#555] text-sm text-center">Nenhum filme na lista "Quero ver"</p>
+      </div>
+    )
+  }
+
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const upcoming = entries
+    .filter(e => e.releaseDate && new Date(e.releaseDate + 'T12:00:00') > today)
+    .sort((a, b) => a.releaseDate!.localeCompare(b.releaseDate!))
+
+  if (upcoming.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20 px-8">
+        <p className="text-[#555] text-sm text-center">Nenhum filme aguardando estreia</p>
+      </div>
+    )
+  }
+
+  const grouped: Record<string, MovieCalEntry[]> = {}
+  for (const entry of upcoming) {
+    const d = entry.releaseDate!
+    if (!grouped[d]) grouped[d] = []
+    grouped[d].push(entry)
+  }
+
+  return (
+    <div style={{ paddingTop: '12px' }}>
+      {Object.entries(grouped).map(([date, dayEntries]) => (
+        <div key={date} style={{ marginBottom: '8px' }}>
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#1a1a1a]" style={{ background: '#0d0d0d' }}>
+            <span className="text-[#f5b730] font-bold text-sm">{formatDateHeader(date)}</span>
+            <span className="text-white text-xs">
+              {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+            </span>
+          </div>
+          {dayEntries.map(({ item }) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
+              onClick={() => navigate(`/movie/${item.id}`)}
+            >
+              <div className="w-10 h-14 bg-[#1a1a1a] rounded-lg overflow-hidden flex-shrink-0">
+                <PosterImage src={getPosterUrl(item.poster)} alt={item.title} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-sm line-clamp-2">{item.title}</p>
+                <p className="text-[#555] text-xs mt-0.5">Estreia em breve</p>
+              </div>
+              <svg className="w-4 h-4 text-[#333] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   watched:   { label: 'Assistido',  color: 'text-[#5cb85c] border-[#5cb85c]' },
@@ -16,7 +129,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   abandoned: { label: 'Abandonado', color: 'text-[#555] border-[#555]' },
 }
 
-function SwipeableMovieRow({ item, onRemove }: { item: LibraryItem; onRemove: (item: LibraryItem) => void }) {
+function SwipeableMovieRow({ item, onRemove, isNewRelease }: { item: LibraryItem; onRemove: (item: LibraryItem) => void; isNewRelease?: boolean }) {
   const navigate = useNavigate()
   const { saveItem } = useLibrary()
   const [offsetX, setOffsetX] = useState(0)
@@ -142,9 +255,16 @@ function SwipeableMovieRow({ item, onRemove }: { item: LibraryItem; onRemove: (i
 
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-base leading-tight mb-2">{item.title}</p>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${STATUS_LABEL[item.status]?.color ?? 'text-[#555] border-[#555]'}`}>
-              {STATUS_LABEL[item.status]?.label ?? item.status}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${STATUS_LABEL[item.status]?.color ?? 'text-[#555] border-[#555]'}`}>
+                {STATUS_LABEL[item.status]?.label ?? item.status}
+              </span>
+              {isNewRelease && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-[#e05555] text-[#e05555]">
+                  Lançamento
+                </span>
+              )}
+            </div>
             {(isWatched || isAbandoned) && (
               <div className="mt-1" onClick={e => e.stopPropagation()}>
                 <StarRating
@@ -185,9 +305,11 @@ function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
 export function Movies() {
   const { items, removeItem } = useLibrary()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [pendingRemove, setPendingRemove] = useState<LibraryItem | null>(null)
   const pendingRemoveRef = useRef<LibraryItem | null>(null)
+  const [releaseDates, setReleaseDates] = useState<Record<number, string>>({})
 
   function requestRemove(item: LibraryItem) {
     if (pendingRemoveRef.current) {
@@ -210,13 +332,50 @@ export function Movies() {
     }
   }
 
+  const watchlistMovies = items.filter(i => i.type === 'movie' && i.status === 'watchlist')
+  const watchlistKey = watchlistMovies.map(i => i.id).join(',')
+
+  useEffect(() => {
+    if (!watchlistKey) { setReleaseDates({}); return }
+    Promise.all(
+      watchlistMovies.map(async item => {
+        if (item.releaseDate) return { id: item.id, releaseDate: item.releaseDate }
+        try {
+          const details = await getDetails(item.id, 'movie')
+          return { id: item.id, releaseDate: details.release_date ?? '' }
+        } catch { return { id: item.id, releaseDate: '' } }
+      })
+    ).then(results => {
+      const map: Record<number, string> = {}
+      results.forEach(r => { if (r.releaseDate) map[r.id] = r.releaseDate })
+      setReleaseDates(map)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlistKey])
+
+  const today = new Date().toISOString().slice(0, 10)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
   const movies    = items.filter(i => i.type === 'movie' && i.id !== pendingRemove?.id)
-  const active    = sortItems(movies.filter(i => i.status === 'watchlist' || i.status === 'watching'), sortBy)
+  const active    = sortItems(movies.filter(i =>
+    (i.status === 'watchlist' || i.status === 'watching') &&
+    !(i.status === 'watchlist' && releaseDates[i.id] > today)
+  ), sortBy)
   const completed = sortItems(movies.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
 
   return (
     <div className="flex flex-col min-h-full">
-      {movies.length === 0 ? (
+      <div className="tabs-nav tabs-full sticky top-0 bg-[#0a0a0a] z-30">
+        <button className={`btn ${tab === 'lista' ? 'btn-active' : ''}`} onClick={() => setTab('lista')}>
+          Lista
+        </button>
+        <button className={`btn ${tab === 'calendario' ? 'btn-active' : ''}`} onClick={() => setTab('calendario')}>
+          Calendário
+        </button>
+      </div>
+
+      {tab === 'calendario' && <MoviesCalendarioTab />}
+
+      {tab === 'lista' && (movies.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-5 py-20 px-8">
           <div className="text-5xl">🎬</div>
           <div className="text-center">
@@ -252,7 +411,17 @@ export function Movies() {
                 </span>
               </div>
               {active.map(item => (
-                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
+                <SwipeableMovieRow
+                  key={`${item.type}-${item.id}`}
+                  item={item}
+                  onRemove={requestRemove}
+                  isNewRelease={
+                    item.status === 'watchlist' &&
+                    !!releaseDates[item.id] &&
+                    releaseDates[item.id] >= thirtyDaysAgo &&
+                    releaseDates[item.id] <= today
+                  }
+                />
               ))}
             </div>
           )}
@@ -271,7 +440,7 @@ export function Movies() {
             </div>
           )}
         </div>
-      )}
+      ))}
 
       {pendingRemove && (
         <UndoToast

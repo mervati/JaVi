@@ -285,6 +285,10 @@ body {
   white-space: nowrap;
 }
 
+.tabs-nav.tabs-full .btn {
+  flex: 1;
+}
+
 /* ── Login Form ── */
 .jv-form {
   padding: 20px;

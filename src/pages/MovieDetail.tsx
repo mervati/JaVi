@@ -89,6 +89,7 @@ export function MovieDetail() {
       status,
       rating: item?.rating ?? 0,
       addedAt: item?.addedAt ?? Date.now(),
+      releaseDate: movie.release_date || undefined,
     })
     if (status === 'watched' && !wasWatched) setShowRating(true)
   }

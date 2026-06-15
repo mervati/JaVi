@@ -19,6 +19,7 @@ export interface LibraryItem {
   rating: number
   addedAt: number
   lastWatchedAt?: number
+  releaseDate?: string
 }
 
 export function useLibrary() {
