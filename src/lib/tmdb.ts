@@ -24,16 +24,16 @@ export async function getWatchProviders(id: number, type: 'movie' | 'tv') {
   return data.results?.BR ?? null
 }
 
-export async function getDetails(id: number, type: 'movie' | 'tv') {
+export async function getDetails(id: number, type: 'movie' | 'tv', language = 'pt-BR') {
   const res = await fetch(
-    `${BASE_URL}/${type}/${id}?language=pt-BR`,
+    `${BASE_URL}/${type}/${id}?language=${language}`,
     { headers }
   )
   return res.json()
 }
 
-export async function getSeriesDetails(id: number) {
-  const res = await fetch(`${BASE_URL}/tv/${id}?language=pt-BR`, { headers })
+export async function getSeriesDetails(id: number, language = 'pt-BR') {
+  const res = await fetch(`${BASE_URL}/tv/${id}?language=${language}`, { headers })
   return res.json()
 }
 

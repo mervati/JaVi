@@ -29,6 +29,7 @@ interface Season {
 interface Series {
   id: number
   name: string
+  original_name: string
   overview: string
   backdrop_path: string | null
   poster_path: string | null
@@ -39,6 +40,7 @@ interface Series {
   number_of_seasons: number
   genres: { id: number; name: string }[]
   vote_average: number
+  origin_country: string[]
 }
 
 interface PendingEp {
@@ -500,6 +502,7 @@ export function SeriesDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [series, setSeries] = useState<Series | null>(null)
+  const [enName, setEnName] = useState<string>('')
   const [cast, setCast] = useState<any[]>([])
   const [providers, setProviders] = useState<any>(null)
   const [similar, setSimilar] = useState<any[]>([])
@@ -571,6 +574,7 @@ export function SeriesDetail() {
         ?? yt[0]
       setTrailerKey(t?.key ?? null)
       setLoading(false)
+      getSeriesDetails(seriesId, 'en-US').then(en => setEnName(en.name ?? ''))
     })
   }, [seriesId])
 
@@ -625,9 +629,17 @@ export function SeriesDetail() {
         </button>
 
         <div className="absolute bottom-4 left-4 right-4">
-          <h1 className="text-white font-black text-2xl leading-tight mb-1">{series.name}</h1>
+          <h1 className="text-white font-black text-2xl leading-tight mb-0.5">{enName || series.name}</h1>
+          {enName && enName !== series.name && (
+            <p className="text-[#aaa] text-sm mb-1">{series.name}</p>
+          )}
           <p className="text-[#888] text-sm">
             {series.number_of_seasons} temporada{series.number_of_seasons !== 1 ? 's' : ''}
+            {(() => {
+              const code = series.origin_country?.[0]
+              if (!code) return ''
+              try { return ` • ${new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(code)}` } catch { return ` • ${code}` }
+            })()}
             {startYear && ` • ${startYear}${endYear && endYear !== startYear ? `–${endYear}` : endYear ? '' : '–'}`}
             {series.status === 'Ended' ? ' • Encerrada' : ' • Em andamento'}
             {series.vote_average > 0 ? ` • ★ ${series.vote_average.toFixed(1)}` : ''}

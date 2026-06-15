@@ -10,6 +10,7 @@ import { TrailerPlayer } from '../components/TrailerPlayer'
 interface Movie {
   id: number
   title: string
+  original_title: string
   overview: string
   backdrop_path: string | null
   poster_path: string | null
@@ -17,6 +18,7 @@ interface Movie {
   runtime: number | null
   vote_average: number
   genres: { id: number; name: string }[]
+  production_countries: { iso_3166_1: string; name: string }[]
 }
 
 interface Provider {
@@ -35,6 +37,7 @@ export function MovieDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [movie, setMovie] = useState<Movie | null>(null)
+  const [enTitle, setEnTitle] = useState<string>('')
   const [providers, setProviders] = useState<Providers | null>(null)
   const [cast, setCast] = useState<any[]>([])
   const [similar, setSimilar] = useState<any[]>([])
@@ -67,6 +70,7 @@ export function MovieDetail() {
         ?? yt[0]
       setTrailerKey(t?.key ?? null)
       setLoading(false)
+      getDetails(movieId, 'movie', 'en-US').then(en => setEnTitle(en.title ?? ''))
     })
   }, [movieId])
 
@@ -131,9 +135,13 @@ export function MovieDetail() {
         </button>
 
         <div className="absolute bottom-4 left-4 right-4">
-          <h1 className="text-white font-black text-2xl leading-tight mb-1">{movie.title}</h1>
+          <h1 className="text-white font-black text-2xl leading-tight mb-0.5">{enTitle || movie.title}</h1>
+          {enTitle && enTitle !== movie.title && (
+            <p className="text-[#aaa] text-sm mb-1">{movie.title}</p>
+          )}
           <p className="text-[#888] text-sm">
-            {year}
+            {movie.production_countries?.[0]?.name ?? ''}
+            {year ? `${movie.production_countries?.[0] ? ' • ' : ''}${year}` : ''}
             {movie.runtime ? ` • ${movie.runtime} min` : ''}
             {movie.vote_average > 0 ? ` • ★ ${movie.vote_average.toFixed(1)}` : ''}
           </p>
@@ -143,20 +151,20 @@ export function MovieDetail() {
       <div className="flex gap-3 px-4 py-4 border-b border-[#1a1a1a]">
         <button
           onClick={() => handleStatus('watched')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${
+          className={`flex-1 py-4 rounded-xl text-base font-extrabold transition-colors ${
             item?.status === 'watched'
               ? 'bg-[#5cb85c] text-white'
-              : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]'
+              : 'bg-[#1a1a1a] text-[#888] border-2 border-[#2a2a2a]'
           }`}
         >
           {item?.status === 'watched' ? '✓ Assistido' : 'Marcar como visto'}
         </button>
         <button
           onClick={() => handleStatus('watchlist')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${
+          className={`flex-1 py-4 rounded-xl text-base font-extrabold transition-colors ${
             item?.status === 'watchlist'
               ? 'bg-[#f5b730] text-black'
-              : 'bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]'
+              : 'bg-[#1a1a1a] text-[#888] border-2 border-[#2a2a2a]'
           }`}
         >
           {item?.status === 'watchlist' ? '★ Na lista' : 'Quero ver'}

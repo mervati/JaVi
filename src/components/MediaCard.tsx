@@ -10,6 +10,9 @@ interface Props {
     media_type: 'movie' | 'tv'
     title?: string
     name?: string
+    original_title?: string
+    original_name?: string
+    original_language?: string
     poster_path: string | null
     overview: string
     release_date?: string
@@ -23,7 +26,12 @@ export function MediaCard({ media }: Props) {
   const { saveItem, removeItem, getItem } = useLibrary()
 
   const item = getItem(media.id, media.media_type)
-  const title = media.title ?? media.name ?? ''
+  const ptbrTitle = media.title ?? media.name ?? ''
+  const title = ptbrTitle
+  const originalTitle = media.original_title ?? media.original_name ?? ''
+  const isEnglishOrigin = media.original_language === 'en' || media.original_language === 'pt'
+  const displayTitle = isEnglishOrigin ? (originalTitle || ptbrTitle) : ptbrTitle
+  const subtitle = isEnglishOrigin && originalTitle !== ptbrTitle ? ptbrTitle : ''
   const year = (media.release_date ?? media.first_air_date ?? '').slice(0, 4)
   const poster = getPosterUrl(media.poster_path)
   const isWatched = item?.status === 'watched'
@@ -78,7 +86,8 @@ export function MediaCard({ media }: Props) {
             </span>
             {year && <span className="text-[#555] text-xs">{year}</span>}
           </div>
-          <p className="text-white font-bold text-sm leading-tight line-clamp-2">{title}</p>
+          <p className="text-white font-bold text-sm leading-tight line-clamp-2">{displayTitle}</p>
+          {subtitle && <p className="text-[#666] text-xs leading-tight line-clamp-1 mt-0.5">{subtitle}</p>}
         </div>
 
         <div className="flex flex-col items-center gap-2 flex-shrink-0">
