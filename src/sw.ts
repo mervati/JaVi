@@ -10,6 +10,26 @@ declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] }
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
+
+self.addEventListener('install', (event) => {
+  if (!self.registration.active) return
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ type: 'window' })
+      const hasVisible = clients.some(c => (c as WindowClient).visibilityState === 'visible')
+      if (!hasVisible) {
+        await self.registration.showNotification('JáVi — Nova versão', {
+          body: 'Toque para abrir e atualizar o app.',
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag: 'app-update',
+          data: { url: '/' },
+        })
+      }
+    })()
+  )
+})
+
 clientsClaim()
 precacheAndRoute(self.__WB_MANIFEST)
 
