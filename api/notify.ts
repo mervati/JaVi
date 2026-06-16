@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
       const libraryDocs = librarySnap.docs.map(d => d.data())
 
       const watchingIds: number[] = libraryDocs
-        .filter(d => d.type === 'tv' && d.status === 'watching')
+        .filter(d => d.type === 'tv' && (d.status === 'watching' || d.status === 'watchlist'))
         .map(d => d.id as number)
 
       const watchlistMovieIds: number[] = libraryDocs
