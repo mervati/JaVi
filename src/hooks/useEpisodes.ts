@@ -60,5 +60,11 @@ export function useEpisodes(seriesId: number) {
     return count
   }
 
-  return { isWatched, toggleEpisode, markSeason, countWatchedInSeason, watchedCount: watched.size }
+  async function clearAll() {
+    if (!user) return
+    const ref = doc(db, 'users', user.uid, 'series_progress', String(seriesId))
+    await setDoc(ref, { watched: [] })
+  }
+
+  return { isWatched, toggleEpisode, markSeason, clearAll, countWatchedInSeason, watchedCount: watched.size }
 }

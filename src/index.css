@@ -394,3 +394,14 @@ body {
   border-color: #2d8cf0;
   box-shadow: 4px 4px #2d8cf0;
 }
+
+/* Esconde a seção ASSISTIR A SEGUIR quando só há o header (todos os cards são null) */
+.nec-section:has(> .nec-header:only-child) {
+  display: none;
+}
+
+/* Separador entre seções da lista de séries */
+.series-section {
+  border-top: 1px solid #1a1a1a;
+  margin-top: 16px;
+}

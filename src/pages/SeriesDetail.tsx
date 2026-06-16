@@ -510,11 +510,12 @@ export function SeriesDetail() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'sobre' | 'episodios'>('episodios')
   const [showRating, setShowRating] = useState(false)
-  const { saveItem, getItem } = useLibrary()
+  const { saveItem, getItem, removeItem } = useLibrary()
 
   const seriesId = Number(id)
-  const { countWatchedInSeason, watchedCount } = useEpisodes(seriesId)
+  const { countWatchedInSeason, watchedCount, clearAll } = useEpisodes(seriesId)
   const prevAllComplete = useRef<boolean | null>(null)
+  const [showWatchlistConfirm, setShowWatchlistConfirm] = useState(false)
 
   function handleEpisodeWatched() {
     if (!series) return
@@ -529,7 +530,36 @@ export function SeriesDetail() {
         rating: 0,
         addedAt: Date.now(),
       })
+    } else if (existing.status === 'watchlist') {
+      saveItem({ ...existing, status: 'watching' })
     }
+  }
+
+  function handleWatchlistToggle() {
+    if (!series) return
+    const existing = getItem(series.id, 'tv')
+    if (existing?.status === 'watchlist') {
+      removeItem(series.id, 'tv')
+      return
+    }
+    if (watchedCount > 0) {
+      setShowWatchlistConfirm(true)
+      return
+    }
+    if (existing) {
+      saveItem({ ...existing, status: 'watchlist' })
+    } else {
+      saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watchlist', rating: 0, addedAt: Date.now() })
+    }
+  }
+
+  async function handleConfirmWatchlist() {
+    if (!series) return
+    const existing = getItem(series.id, 'tv')
+    await clearAll()
+    const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now() }
+    saveItem(base)
+    setShowWatchlistConfirm(false)
   }
 
   useEffect(() => {
@@ -546,6 +576,9 @@ export function SeriesDetail() {
       fireSeriesConfetti()
     }
     prevAllComplete.current = allComplete
+
+    // Não alterar de watchlist para watching automaticamente — só quando o usuário marcar um episódio
+    if (existing.status === 'watchlist' && !allComplete) return
 
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
@@ -606,6 +639,41 @@ export function SeriesDetail() {
           onSkip={() => setShowRating(false)}
         />
       )}
+
+      {showWatchlistConfirm && (
+        <>
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setShowWatchlistConfirm(false)} />
+          <div
+            className="fixed z-50 rounded-2xl flex flex-col items-center"
+            style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+          >
+            <div className="w-10 h-1 rounded-full mb-6" style={{ background: '#333' }} />
+            <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Atenção</p>
+            <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+              Mover para "Quero ver"?
+            </p>
+            <p className="text-[#666] text-sm text-center leading-relaxed mb-8 px-2">
+              Você já começou a assistir essa série. Ao confirmar, todo o progresso de episódios será apagado.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowWatchlistConfirm(false)}
+                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444' }}
+              >
+                Não
+              </button>
+              <button
+                onClick={handleConfirmWatchlist}
+                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       <div className="relative">
         <div className="h-64 bg-[#111] overflow-hidden">
           {(series.backdrop_path || series.poster_path) && (
@@ -645,6 +713,19 @@ export function SeriesDetail() {
             {series.vote_average > 0 ? ` • ★ ${series.vote_average.toFixed(1)}` : ''}
           </p>
         </div>
+      </div>
+
+      <div className="flex gap-3 px-4 py-4 border-b border-[#1a1a1a]">
+        <button
+          onClick={handleWatchlistToggle}
+          className={`flex-1 py-4 rounded-xl text-base font-extrabold transition-colors ${
+            existingItem?.status === 'watchlist'
+              ? 'bg-[#f5b730] text-black'
+              : 'bg-[#1a1a1a] text-[#888] border-2 border-[#2a2a2a]'
+          }`}
+        >
+          {existingItem?.status === 'watchlist' ? '★ Na lista' : 'Quero ver'}
+        </button>
       </div>
 
       <div className="flex border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">

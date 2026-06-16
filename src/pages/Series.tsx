@@ -71,7 +71,9 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
   useEffect(() => {
     getSeriesDetails(item.id)
       .then(data => {
-        setSeasons(data.seasons?.filter((s: any) => s.season_number > 0) ?? [])
+        const filtered = data.seasons?.filter((s: any) => s.season_number > 0) ?? []
+        setSeasons(filtered)
+        if (filtered.length === 0) setReady(true)
       })
       .catch(() => setReady(true))
   }, [item.id])
@@ -171,20 +173,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
 
   const displayEp = frozenNextEp ?? nextEp
 
-  if (!ready) {
-    return (
-      <div className="flex items-center gap-3 border-b border-[#1a1a1a]" style={{ padding: '12px 20px' }}>
-        <div className="w-12 h-16 bg-[#1a1a1a] rounded-lg animate-pulse flex-shrink-0" />
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="h-3 bg-[#1a1a1a] rounded animate-pulse w-24" />
-          <div className="h-4 bg-[#1a1a1a] rounded animate-pulse w-1/2" />
-          <div className="h-3 bg-[#1a1a1a] rounded animate-pulse w-3/4" />
-        </div>
-      </div>
-    )
-  }
-
-  if (!displayEp) return null
+  if (!ready || !displayEp) return null
 
   const epWatched = isWatched(displayEp.season, displayEp.episode)
   const showChecked = frozenNextEp != null ? true : epWatched
@@ -598,8 +587,8 @@ export function Series() {
           </div>
 
           {watching.length > 0 && (
-            <div>
-              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
+            <div className="nec-section">
+              <div className="nec-header" style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
                 <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
                   ASSISTIR A SEGUIR
                 </span>
@@ -609,8 +598,8 @@ export function Series() {
           )}
 
           {watchlist.length > 0 && (
-            <div style={watching.length > 0 ? { marginTop: '24px' } : {}}>
-              <div style={{ padding: watching.length > 0 ? '16px 20px 10px 20px' : '20px 20px 10px 20px', borderTop: watching.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
+            <div className="series-section">
+              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
                 <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
                   QUERO VER
                 </span>
@@ -622,8 +611,8 @@ export function Series() {
           )}
 
           {completed.length > 0 && (
-            <div style={watching.length > 0 || watchlist.length > 0 ? { marginTop: '24px' } : {}}>
-              <div style={{ padding: '16px 20px 10px 20px', borderTop: watching.length > 0 || watchlist.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
+            <div className="series-section">
+              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
                 <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
                   TODAS AS SÉRIES
                 </span>
