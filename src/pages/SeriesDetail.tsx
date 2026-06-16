@@ -59,46 +59,45 @@ function ConfirmPreviousModal({
   onNever: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-12">
-      <div className="absolute inset-0 bg-black/75" onClick={onJustThis} />
-      <div className="relative w-[72%] bg-[#2a2a2a] rounded-2xl overflow-hidden shadow-2xl">
-        <div className="px-6 pt-7 pb-6 text-center">
-          <p className="text-white font-bold text-xl leading-snug mb-3">
-            Marcar episódios anteriores?
-          </p>
-          <p className="text-[#aaa] text-sm leading-relaxed">
-            Você deseja marcar todos os episódios anteriores como assistidos?
-          </p>
-        </div>
-
-        <div className="border-t border-[#3a3a3a]">
+    <>
+      <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onJustThis} />
+      <div
+        className="fixed z-50 rounded-2xl flex flex-col items-center"
+        style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+      >
+        <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
+        <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Episódios anteriores</p>
+        <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+          Marcar todos como assistidos?
+        </p>
+        <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
+          Existem episódios anteriores não marcados. Deseja marcá-los também?
+        </p>
+        <div className="flex gap-3 w-full mb-3">
+          <button
+            onClick={onJustThis}
+            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+          >
+            Não
+          </button>
           <button
             onClick={onMarkAll}
-            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
+            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
           >
             Sim
           </button>
         </div>
-
-        <div className="border-t border-[#3a3a3a]">
-          <button
-            onClick={onJustThis}
-            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
-          >
-            Não
-          </button>
-        </div>
-
-        <div className="border-t border-[#3a3a3a]">
-          <button
-            onClick={onNever}
-            className="w-full py-5 text-[#4a9eff] font-semibold text-lg active:bg-[#333] transition-colors"
-          >
-            Nunca para esta série
-          </button>
-        </div>
+        <button
+          onClick={onNever}
+          className="w-full py-[13px] rounded-xl text-[15px] font-bold"
+          style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', marginTop: '5px' }}
+        >
+          Nunca perguntar para esta série
+        </button>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -250,12 +249,27 @@ function SeasonRow({
   seriesId,
   season,
   onEpisodeWatched,
+  defaultOpen = false,
 }: {
   seriesId: number
   season: Season
   onEpisodeWatched: () => void
+  defaultOpen?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const hasAutoOpened = useRef(false)
+
+  useEffect(() => {
+    if (defaultOpen && !hasAutoOpened.current) {
+      hasAutoOpened.current = true
+      setOpen(true)
+      getSeasonEpisodes(seriesId, season.season_number).then(data => {
+        setEpisodes(data.episodes ?? [])
+        setLoading(false)
+      })
+      setLoading(true)
+    }
+  }, [defaultOpen])
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [loading, setLoading] = useState(false)
   const [marking, setMarking] = useState(false)
@@ -513,9 +527,10 @@ export function SeriesDetail() {
   const { saveItem, getItem, removeItem } = useLibrary()
 
   const seriesId = Number(id)
-  const { countWatchedInSeason, watchedCount, clearAll } = useEpisodes(seriesId)
+  const { countWatchedInSeason, watchedCount, clearAll, loaded: episodesLoaded } = useEpisodes(seriesId)
   const prevAllComplete = useRef<boolean | null>(null)
   const [showWatchlistConfirm, setShowWatchlistConfirm] = useState(false)
+  const [confirmingWatchlist, setConfirmingWatchlist] = useState(false)
 
   function handleEpisodeWatched() {
     if (!series) return
@@ -555,10 +570,12 @@ export function SeriesDetail() {
 
   async function handleConfirmWatchlist() {
     if (!series) return
+    setConfirmingWatchlist(true)
     const existing = getItem(series.id, 'tv')
     await clearAll()
     const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now() }
     saveItem(base)
+    setConfirmingWatchlist(false)
     setShowWatchlistConfirm(false)
   }
 
@@ -577,8 +594,8 @@ export function SeriesDetail() {
     }
     prevAllComplete.current = allComplete
 
-    // Não alterar de watchlist para watching automaticamente — só quando o usuário marcar um episódio
-    if (existing.status === 'watchlist' && !allComplete) return
+    // Não alterar de watchlist/abandoned para watching automaticamente — só quando o usuário marcar um episódio
+    if ((existing.status === 'watchlist' || existing.status === 'abandoned') && !allComplete) return
 
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
@@ -627,6 +644,20 @@ export function SeriesDetail() {
 
   const existingItem = getItem(seriesId, 'tv')
 
+  const autoExpandSeason = (() => {
+    if (!episodesLoaded) return null
+    const validSeasons = seasons.filter(s => s.episode_count > 0)
+    if (validSeasons.length === 0) return null
+    if (watchedCount === 0) return validSeasons[0].season_number
+    const inProgress = validSeasons.find(s => {
+      const w = countWatchedInSeason(s.season_number, s.episode_count)
+      return w > 0 && w < s.episode_count
+    })
+    if (inProgress) return inProgress.season_number
+    const next = validSeasons.find(s => countWatchedInSeason(s.season_number, s.episode_count) === 0)
+    return next?.season_number ?? null
+  })()
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {showRating && (
@@ -647,12 +678,12 @@ export function SeriesDetail() {
             className="fixed z-50 rounded-2xl flex flex-col items-center"
             style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
           >
-            <div className="w-10 h-1 rounded-full mb-6" style={{ background: '#333' }} />
+            <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
             <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Atenção</p>
             <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
               Mover para "Quero ver"?
             </p>
-            <p className="text-[#666] text-sm text-center leading-relaxed mb-8 px-2">
+            <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
               Você já começou a assistir essa série. Ao confirmar, todo o progresso de episódios será apagado.
             </p>
             <div className="flex gap-3 w-full">
@@ -665,10 +696,14 @@ export function SeriesDetail() {
               </button>
               <button
                 onClick={handleConfirmWatchlist}
-                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
-                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
+                disabled={confirmingWatchlist}
+                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold flex items-center justify-center gap-2"
+                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820', opacity: confirmingWatchlist ? 0.7 : 1 }}
               >
-                Sim
+                {confirmingWatchlist && (
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                )}
+                {confirmingWatchlist ? 'Aguarde...' : 'Sim'}
               </button>
             </div>
           </div>
@@ -715,18 +750,32 @@ export function SeriesDetail() {
         </div>
       </div>
 
-      <div className="flex gap-3 px-4 py-4 border-b border-[#1a1a1a]">
-        <button
-          onClick={handleWatchlistToggle}
-          className={`flex-1 py-4 rounded-xl text-base font-extrabold transition-colors ${
-            existingItem?.status === 'watchlist'
-              ? 'bg-[#f5b730] text-black'
-              : 'bg-[#1a1a1a] text-[#888] border-2 border-[#2a2a2a]'
-          }`}
-        >
-          {existingItem?.status === 'watchlist' ? '★ Na lista' : 'Quero ver'}
-        </button>
-      </div>
+      {(() => {
+        const s = existingItem?.status
+        const label =
+          s === 'watchlist' ? '★ Na lista' :
+          s === 'watching'  ? '▶ Assistindo' :
+          s === 'watched'   ? '✓ Assistida' :
+          s === 'abandoned' ? '✗ Abandonada' :
+          'Quero ver'
+        const style: React.CSSProperties =
+          s === 'watchlist' ? { background: '#f5b730', color: '#000' } :
+          s === 'watching'  ? { background: '#4a9eff', color: '#000' } :
+          s === 'watched'   ? { background: '#4caf50', color: '#000' } :
+          s === 'abandoned' ? { background: '#e05555', color: '#fff' } :
+          { background: '#1a1a1a', color: '#888', border: '2px solid #2a2a2a' }
+        return (
+          <div className="flex gap-3 px-4 py-4 border-b border-[#1a1a1a]">
+            <button
+              onClick={handleWatchlistToggle}
+              className="flex-1 py-4 rounded-xl text-base font-extrabold transition-colors"
+              style={style}
+            >
+              {label}
+            </button>
+          </div>
+        )
+      })()}
 
       <div className="flex border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">
         {(['sobre', 'episodios'] as const).map(t => (
@@ -764,7 +813,7 @@ export function SeriesDetail() {
               ...(providers.buy ?? []),
             ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.provider_id === p.provider_id) === i)
             return all.length > 0 ? (
-              <div style={{ marginTop: '28px', marginBottom: '32px' }}>
+              <div style={{ marginTop: '28px', marginBottom: '20px' }}>
                 <p className="text-white text-xs font-bold mb-3 uppercase tracking-wider">Onde assistir</p>
                 <div className="flex gap-3 flex-wrap">
                   {all.map((p: any) => (
@@ -783,7 +832,7 @@ export function SeriesDetail() {
           })()}
 
           {cast.length > 0 && (
-            <div style={{ marginBottom: '32px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <p className="text-white text-xs font-bold mb-3 uppercase tracking-wider">Elenco</p>
               <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
                 {cast.map(actor => (
@@ -805,7 +854,7 @@ export function SeriesDetail() {
           )}
 
           {trailerKey && (
-            <div style={{ marginBottom: '32px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <p className="text-white text-xs font-bold uppercase tracking-wider mb-3">Trailer</p>
               <TrailerPlayer videoKey={trailerKey} title={series.name} />
             </div>
@@ -841,7 +890,13 @@ export function SeriesDetail() {
           {seasons.length === 0
             ? <p className="text-[#555] text-sm px-4 py-6">Nenhuma temporada disponível.</p>
             : seasons.map(season => (
-                <SeasonRow key={season.id} seriesId={seriesId} season={season} onEpisodeWatched={handleEpisodeWatched} />
+                <SeasonRow
+                  key={season.id}
+                  seriesId={seriesId}
+                  season={season}
+                  onEpisodeWatched={handleEpisodeWatched}
+                  defaultOpen={season.season_number === autoExpandSeason}
+                />
               ))
           }
         </div>

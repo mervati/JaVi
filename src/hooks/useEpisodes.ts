@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 export function useEpisodes(seriesId: number) {
   const { user } = useAuth()
   const [watched, setWatched] = useState<Set<string>>(new Set())
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!user || !seriesId) return
@@ -16,6 +17,7 @@ export function useEpisodes(seriesId: number) {
       } else {
         setWatched(new Set())
       }
+      setLoaded(true)
     })
     return unsub
   }, [user, seriesId])
@@ -66,5 +68,5 @@ export function useEpisodes(seriesId: number) {
     await setDoc(ref, { watched: [] })
   }
 
-  return { isWatched, toggleEpisode, markSeason, clearAll, countWatchedInSeason, watchedCount: watched.size }
+  return { isWatched, toggleEpisode, markSeason, clearAll, countWatchedInSeason, watchedCount: watched.size, loaded }
 }

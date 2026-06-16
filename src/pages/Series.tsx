@@ -351,7 +351,11 @@ function CalendarioTab() {
               seriesStatus: details.status ?? '',
             } as CalEntry
           }
-          return { item, nextEp: details.next_episode_to_air ?? null, seriesStatus: details.status ?? '' } as CalEntry
+          const today = new Date().toISOString().slice(0, 10)
+          const last = details.last_episode_to_air
+          const next = details.next_episode_to_air
+          const ep = last?.air_date === today ? last : (next ?? null)
+          return { item, nextEp: ep, seriesStatus: details.status ?? '' } as CalEntry
         } catch {
           return { item, nextEp: null, seriesStatus: '' } as CalEntry
         }

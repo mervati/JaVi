@@ -66,11 +66,18 @@ export default async function handler(req: any, res: any) {
         }
 
         const nextEp = series.next_episode_to_air
-        if (!nextEp || nextEp.air_date !== todayStr) continue
+        const lastEp = series.last_episode_to_air
+        const ep = nextEp?.air_date === todayStr ? nextEp : lastEp?.air_date === todayStr ? lastEp : null
+        if (!ep) continue
 
-        const s = String(nextEp.season_number).padStart(2, '0')
-        const e = String(nextEp.episode_number).padStart(2, '0')
-        const epName: string = nextEp.name ? ` — ${nextEp.name}` : ''
+        const s = String(ep.season_number).padStart(2, '0')
+        const e = String(ep.episode_number).padStart(2, '0')
+        const epName: string = ep.name ? ` — ${ep.name}` : ''
+
+        const dedupId = `${seriesId}-S${s}E${e}-${todayStr}`
+        const sentRef = userRef.collection('notifications_sent').doc(dedupId)
+        const sentDoc = await sentRef.get()
+        if (sentDoc.exists) { skipped++; continue }
 
         const payload = JSON.stringify({
           title: series.name ?? 'JáVi',
@@ -93,6 +100,8 @@ export default async function handler(req: any, res: any) {
             }
           }
         }
+
+        await sentRef.set({ sentAt: todayStr })
       }
     }
 
