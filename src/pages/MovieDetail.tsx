@@ -74,6 +74,11 @@ export function MovieDetail() {
     })
   }, [movieId])
 
+  function handleAbandon() {
+    if (!movie || !item) return
+    saveItem({ ...item, status: 'abandoned' })
+  }
+
   function handleStatus(status: 'watched' | 'watchlist') {
     if (!movie) return
     if (item?.status === status) {
@@ -170,6 +175,15 @@ export function MovieDetail() {
         >
           {item?.status === 'watchlist' ? '★ Na lista' : 'Quero ver'}
         </button>
+        {(item?.status === 'watching' || item?.status === 'watchlist') && (
+          <button
+            onClick={handleAbandon}
+            className="py-4 rounded-xl text-sm font-bold"
+            style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', paddingLeft: '5px', paddingRight: '5px' }}
+          >
+            Abandonar
+          </button>
+        )}
       </div>
 
       {item?.status === 'watched' && (
