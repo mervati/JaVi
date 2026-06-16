@@ -219,7 +219,6 @@ function AppContent() {
         </main>
 
         <BottomNav />
-        <UpdatePrompt />
         {showUpdatedToast && (
           <div
             className="fixed z-[70] rounded-2xl flex items-center gap-3"
@@ -243,6 +242,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppContent />
+        <UpdatePrompt />
       </BrowserRouter>
     </AuthProvider>
   )
