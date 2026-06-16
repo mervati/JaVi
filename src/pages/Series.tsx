@@ -343,11 +343,17 @@ function CalendarioTab() {
           // Para watchlist: usa first_air_date se for futura como "próximo episódio"
           if (item.status === 'watchlist') {
             const today = new Date().toISOString().slice(0, 10)
-            const airDate = details.next_episode_to_air?.air_date ?? details.first_air_date ?? null
-            const isFuture = airDate && airDate > today
+            const last = details.last_episode_to_air
+            const next = details.next_episode_to_air
+            const ep = last?.air_date === today ? last : (next?.air_date && next.air_date >= today ? next : null)
+            if (ep) {
+              return { item, nextEp: ep, seriesStatus: details.status ?? '' } as CalEntry
+            }
+            const firstAir = details.first_air_date ?? null
+            const isPremiere = firstAir && firstAir >= today
             return {
               item,
-              nextEp: isFuture ? { air_date: airDate, season_number: 1, episode_number: 1, name: 'Estreia' } : null,
+              nextEp: isPremiere ? { air_date: firstAir, season_number: 1, episode_number: 1, name: 'Estreia' } : null,
               seriesStatus: details.status ?? '',
             } as CalEntry
           }
