@@ -1,20 +1,35 @@
 import { useRef, useState } from 'react'
+import { doc, getDoc, increment, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useAuth } from '../contexts/AuthContext'
 
-// Guarda a função de parar o player atualmente ativo
 let stopCurrent: (() => void) | null = null
 
 export function TrailerPlayer({ videoKey, title }: { videoKey: string; title: string }) {
   const [playing, setPlaying] = useState(false)
   const stopRef = useRef<(() => void) | undefined>(undefined)
   stopRef.current = () => setPlaying(false)
+  const { user } = useAuth()
 
-  function handlePlay() {
-    // Para o vídeo anterior, se houver
-    if (stopCurrent && stopCurrent !== stopRef.current) {
-      stopCurrent()
-    }
+  async function handlePlay() {
+    if (stopCurrent && stopCurrent !== stopRef.current) stopCurrent()
     stopCurrent = stopRef.current ?? null
     setPlaying(true)
+
+    if (user) {
+      try {
+        const dataRef = doc(db, 'users', user.uid, 'achievement_data', 'trailers')
+        await setDoc(dataRef, { count: increment(1) }, { merge: true })
+        const snap = await getDoc(dataRef)
+        if ((snap.data()?.count ?? 0) >= 5) {
+          await setDoc(
+            doc(db, 'users', user.uid, 'achievements', 'sommelier'),
+            { unlockedAt: Date.now() },
+            { merge: true }
+          )
+        }
+      } catch { /* non-blocking */ }
+    }
   }
 
   if (playing) {

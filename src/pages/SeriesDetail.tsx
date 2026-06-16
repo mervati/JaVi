@@ -9,6 +9,9 @@ import { useLibrary } from '../hooks/useLibrary'
 import { RatingPrompt } from '../components/RatingPrompt'
 import { TrailerPlayer } from '../components/TrailerPlayer'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import { useAuth } from '../contexts/AuthContext'
+import { db } from '../lib/firebase'
+import { doc, setDoc } from 'firebase/firestore'
 
 interface Episode {
   id: number
@@ -534,6 +537,7 @@ export function SeriesDetail() {
     return () => container.removeEventListener('scroll', onScroll)
   }, [])
   const { saveItem, getItem, removeItem } = useLibrary()
+  const { user } = useAuth()
 
   const seriesId = Number(id)
   const { countWatchedInSeason, watchedCount, clearAll, loaded: episodesLoaded } = useEpisodes(seriesId)
@@ -595,6 +599,11 @@ export function SeriesDetail() {
     const existing = getItem(series.id, 'tv')
     await clearAll()
     saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now() })
+    if (user) {
+      try {
+        await setDoc(doc(db, 'users', user.uid, 'achievements', 'volta-passado'), { unlockedAt: Date.now() }, { merge: true })
+      } catch { /* non-blocking */ }
+    }
     setConfirmingRewatch(false)
     setShowRewatchConfirm(false)
   }
