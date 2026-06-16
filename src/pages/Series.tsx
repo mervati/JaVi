@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
-import { UndoToast } from '../components/UndoToast'
 import { PosterImage } from '../components/PosterImage'
 import { EpisodeCheckbox } from '../components/EpisodeCheckbox'
 import { useRegisterRefresh } from '../contexts/RefreshContext'
@@ -518,31 +517,9 @@ export function Series() {
   const [calRefreshKey, setCalRefreshKey] = useState(0)
 
   useRegisterRefresh(async () => setCalRefreshKey(k => k + 1))
-  const [pendingRemove, setPendingRemove] = useState<LibraryItem | null>(null)
-  const pendingRemoveRef = useRef<LibraryItem | null>(null)
+  const [confirmItem, setConfirmItem] = useState<LibraryItem | null>(null)
 
-  function requestRemove(item: LibraryItem) {
-    if (pendingRemoveRef.current) {
-      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
-    }
-    pendingRemoveRef.current = item
-    setPendingRemove(item)
-  }
-
-  function undoRemove() {
-    pendingRemoveRef.current = null
-    setPendingRemove(null)
-  }
-
-  function confirmRemove() {
-    if (pendingRemoveRef.current) {
-      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
-      pendingRemoveRef.current = null
-      setPendingRemove(null)
-    }
-  }
-
-  const series    = items.filter(i => i.type === 'tv' && i.id !== pendingRemove?.id)
+  const series    = items.filter(i => i.type === 'tv')
   const watching  = sortItems(series.filter(i => i.status === 'watching'), sortBy)
   const watchlist = sortItems(series.filter(i => i.status === 'watchlist'), sortBy)
   const completed = sortItems(series.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
@@ -615,7 +592,7 @@ export function Series() {
                 </span>
               </div>
               {watchlist.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>
           )}
@@ -628,7 +605,7 @@ export function Series() {
                 </span>
               </div>
               {completed.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
+                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>
           )}
@@ -638,13 +615,41 @@ export function Series() {
 
       {tab === 'calendario' && <CalendarioTab key={calRefreshKey} />}
 
-      {pendingRemove && (
-        <UndoToast
-          key={pendingRemove.id}
-          title={pendingRemove.title}
-          onUndo={undoRemove}
-          onExpire={confirmRemove}
-        />
+      {confirmItem && (
+        <>
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setConfirmItem(null)} />
+          <div
+            className="fixed z-50 rounded-2xl flex flex-col items-center"
+            style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+          >
+            <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
+            <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Remover da lista</p>
+            <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+              {confirmItem.title}
+            </p>
+            <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
+              {confirmItem.status === 'watching'
+                ? 'Todo o progresso de episódios será perdido. Deseja continuar?'
+                : 'Deseja remover esta série da sua lista?'}
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setConfirmItem(null)}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+              >
+                Não
+              </button>
+              <button
+                onClick={() => { removeItem(confirmItem.id, confirmItem.type); setConfirmItem(null) }}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

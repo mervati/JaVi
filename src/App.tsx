@@ -27,14 +27,14 @@ function UpdatePrompt() {
         <div className="flex gap-3 w-full">
           <button
             onClick={() => setNeedRefresh(false)}
-            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
             style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
           >
             Agora não
           </button>
           <button
             onClick={() => updateServiceWorker(true)}
-            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
             style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
           >
             Atualizar

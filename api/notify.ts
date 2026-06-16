@@ -46,11 +46,32 @@ export default async function handler(req: any, res: any) {
       if (subsSnap.empty) continue
 
       const librarySnap = await userRef.collection('library').get()
-      const watchingIds: number[] = librarySnap.docs
-        .filter(d => d.data().type === 'tv' && d.data().status === 'watching')
-        .map(d => d.data().id as number)
+      const libraryDocs = librarySnap.docs.map(d => d.data())
 
-      if (!watchingIds.length) continue
+      const watchingIds: number[] = libraryDocs
+        .filter(d => d.type === 'tv' && d.status === 'watching')
+        .map(d => d.id as number)
+
+      const watchlistMovieIds: number[] = libraryDocs
+        .filter(d => d.type === 'movie' && d.status === 'watchlist')
+        .map(d => d.id as number)
+
+      async function sendToAllSubs(payload: string) {
+        for (const subDoc of subsSnap.docs) {
+          const sub = subDoc.data()
+          try {
+            await webPush.sendNotification(
+              { endpoint: sub.endpoint as string, keys: sub.keys as { p256dh: string; auth: string } },
+              payload
+            )
+            sent++
+          } catch (err: any) {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              await subDoc.ref.delete()
+            }
+          }
+        }
+      }
 
       for (const seriesId of watchingIds) {
         let series: any
@@ -76,31 +97,42 @@ export default async function handler(req: any, res: any) {
 
         const dedupId = `${seriesId}-S${s}E${e}-${todayStr}`
         const sentRef = userRef.collection('notifications_sent').doc(dedupId)
-        const sentDoc = await sentRef.get()
-        if (sentDoc.exists) { skipped++; continue }
+        if ((await sentRef.get()).exists) { skipped++; continue }
 
-        const payload = JSON.stringify({
+        await sendToAllSubs(JSON.stringify({
           title: series.name ?? 'JáVi',
           body: `T${s}E${e}${epName} vai ao ar hoje! 🎬`,
           url: `/series/${seriesId}`,
           tag: `ep-${seriesId}-S${s}E${e}`,
-        })
+        }))
+        await sentRef.set({ sentAt: todayStr })
+      }
 
-        for (const subDoc of subsSnap.docs) {
-          const sub = subDoc.data()
-          try {
-            await webPush.sendNotification(
-              { endpoint: sub.endpoint as string, keys: sub.keys as { p256dh: string; auth: string } },
-              payload
-            )
-            sent++
-          } catch (err: any) {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              await subDoc.ref.delete()
-            }
-          }
+      for (const movieId of watchlistMovieIds) {
+        let movie: any
+        try {
+          const resp = await fetch(
+            `https://api.themoviedb.org/3/movie/${movieId}?language=pt-BR`,
+            { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } }
+          )
+          movie = await resp.json()
+        } catch {
+          skipped++
+          continue
         }
 
+        if (movie.release_date !== todayStr) continue
+
+        const dedupId = `movie-${movieId}-${todayStr}`
+        const sentRef = userRef.collection('notifications_sent').doc(dedupId)
+        if ((await sentRef.get()).exists) { skipped++; continue }
+
+        await sendToAllSubs(JSON.stringify({
+          title: movie.title ?? 'JáVi',
+          body: `Estreia hoje! Não perca. 🎬`,
+          url: `/movie/${movieId}`,
+          tag: `movie-${movieId}-${todayStr}`,
+        }))
         await sentRef.set({ sentAt: todayStr })
       }
     }

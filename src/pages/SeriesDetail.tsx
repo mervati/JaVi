@@ -76,14 +76,14 @@ function ConfirmPreviousModal({
         <div className="flex gap-3 w-full mb-3">
           <button
             onClick={onJustThis}
-            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
             style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
           >
             Não
           </button>
           <button
             onClick={onMarkAll}
-            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
             style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
           >
             Sim
@@ -91,7 +91,7 @@ function ConfirmPreviousModal({
         </div>
         <button
           onClick={onNever}
-          className="w-full py-[13px] rounded-xl text-[15px] font-bold"
+          className="w-full py-[14px] rounded-xl text-[15px] font-bold"
           style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', marginTop: '5px' }}
         >
           Nunca perguntar para esta série
@@ -531,6 +531,8 @@ export function SeriesDetail() {
   const prevAllComplete = useRef<boolean | null>(null)
   const [showWatchlistConfirm, setShowWatchlistConfirm] = useState(false)
   const [confirmingWatchlist, setConfirmingWatchlist] = useState(false)
+  const [showRewatchConfirm, setShowRewatchConfirm] = useState(false)
+  const [confirmingRewatch, setConfirmingRewatch] = useState(false)
 
   function handleEpisodeWatched() {
     if (!series) return
@@ -576,6 +578,16 @@ export function SeriesDetail() {
     } else {
       saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'abandoned', rating: 0, addedAt: Date.now() })
     }
+  }
+
+  async function handleConfirmRewatch() {
+    if (!series) return
+    setConfirmingRewatch(true)
+    const existing = getItem(series.id, 'tv')
+    await clearAll()
+    saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now() })
+    setConfirmingRewatch(false)
+    setShowRewatchConfirm(false)
   }
 
   async function handleConfirmWatchlist() {
@@ -699,7 +711,7 @@ export function SeriesDetail() {
             <div className="flex gap-3 w-full">
               <button
                 onClick={() => setShowWatchlistConfirm(false)}
-                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
                 style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444' }}
               >
                 Não
@@ -707,7 +719,7 @@ export function SeriesDetail() {
               <button
                 onClick={handleConfirmWatchlist}
                 disabled={confirmingWatchlist}
-                className="flex-1 py-[13px] rounded-xl text-[15px] font-bold flex items-center justify-center gap-2"
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold flex items-center justify-center gap-2"
                 style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820', opacity: confirmingWatchlist ? 0.7 : 1 }}
               >
                 {confirmingWatchlist && (
@@ -719,6 +731,45 @@ export function SeriesDetail() {
           </div>
         </>
       )}
+      {showRewatchConfirm && (
+        <>
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setShowRewatchConfirm(false)} />
+          <div
+            className="fixed z-50 rounded-2xl flex flex-col items-center"
+            style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+          >
+            <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
+            <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Reassistir</p>
+            <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+              Começar do zero?
+            </p>
+            <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
+              Todo o progresso de episódios será apagado e a série voltará para "Assistindo".
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowRewatchConfirm(false)}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+              >
+                Não
+              </button>
+              <button
+                onClick={handleConfirmRewatch}
+                disabled={confirmingRewatch}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold flex items-center justify-center gap-2"
+                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820', opacity: confirmingRewatch ? 0.7 : 1 }}
+              >
+                {confirmingRewatch && (
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                )}
+                {confirmingRewatch ? 'Aguarde...' : 'Sim'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="relative">
         <div className="h-64 bg-[#111] overflow-hidden">
           {(series.backdrop_path || series.poster_path) && (
@@ -790,6 +841,15 @@ export function SeriesDetail() {
                 style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', paddingLeft: '5px', paddingRight: '5px' }}
               >
                 Abandonar
+              </button>
+            )}
+            {s === 'watched' && (
+              <button
+                onClick={() => setShowRewatchConfirm(true)}
+                className="py-4 rounded-xl text-sm font-bold"
+                style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', paddingLeft: '5px', paddingRight: '5px' }}
+              >
+                Reassistir
               </button>
             )}
           </div>

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PillTabs } from '../components/PillTabs'
-import { UndoToast } from '../components/UndoToast'
 import { PosterImage } from '../components/PosterImage'
 import { useLibrary } from '../hooks/useLibrary'
 import { getPosterUrl, getDetails } from '../lib/tmdb'
@@ -307,30 +306,8 @@ export function Movies() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
-  const [pendingRemove, setPendingRemove] = useState<LibraryItem | null>(null)
-  const pendingRemoveRef = useRef<LibraryItem | null>(null)
+  const [confirmItem, setConfirmItem] = useState<LibraryItem | null>(null)
   const [releaseDates, setReleaseDates] = useState<Record<number, string>>({})
-
-  function requestRemove(item: LibraryItem) {
-    if (pendingRemoveRef.current) {
-      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
-    }
-    pendingRemoveRef.current = item
-    setPendingRemove(item)
-  }
-
-  function undoRemove() {
-    pendingRemoveRef.current = null
-    setPendingRemove(null)
-  }
-
-  function confirmRemove() {
-    if (pendingRemoveRef.current) {
-      removeItem(pendingRemoveRef.current.id, pendingRemoveRef.current.type)
-      pendingRemoveRef.current = null
-      setPendingRemove(null)
-    }
-  }
 
   const watchlistMovies = items.filter(i => i.type === 'movie' && i.status === 'watchlist')
   const watchlistKey = watchlistMovies.map(i => i.id).join(',')
@@ -355,7 +332,7 @@ export function Movies() {
 
   const today = new Date().toISOString().slice(0, 10)
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
-  const movies    = items.filter(i => i.type === 'movie' && i.id !== pendingRemove?.id)
+  const movies    = items.filter(i => i.type === 'movie')
   const active    = sortItems(movies.filter(i =>
     (i.status === 'watchlist' || i.status === 'watching') &&
     !(i.status === 'watchlist' && releaseDates[i.id] > today)
@@ -414,7 +391,7 @@ export function Movies() {
                 <SwipeableMovieRow
                   key={`${item.type}-${item.id}`}
                   item={item}
-                  onRemove={requestRemove}
+                  onRemove={setConfirmItem}
                   isNewRelease={
                     item.status === 'watchlist' &&
                     !!releaseDates[item.id] &&
@@ -435,20 +412,46 @@ export function Movies() {
                 </span>
               </div>
               {completed.map(item => (
-                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={requestRemove} />
+                <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>
           )}
         </div>
       ))}
 
-      {pendingRemove && (
-        <UndoToast
-          key={pendingRemove.id}
-          title={pendingRemove.title}
-          onUndo={undoRemove}
-          onExpire={confirmRemove}
-        />
+      {confirmItem && (
+        <>
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setConfirmItem(null)} />
+          <div
+            className="fixed z-50 rounded-2xl flex flex-col items-center"
+            style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+          >
+            <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
+            <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Remover da lista</p>
+            <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+              {confirmItem.title}
+            </p>
+            <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
+              Deseja remover este filme da sua lista?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setConfirmItem(null)}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+              >
+                Não
+              </button>
+              <button
+                onClick={() => { removeItem(confirmItem.id, confirmItem.type); setConfirmItem(null) }}
+                className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
+                style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

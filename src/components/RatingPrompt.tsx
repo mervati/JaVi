@@ -31,14 +31,14 @@ export function RatingPrompt({ title, onSave, onSkip }: Props) {
         <div className="flex gap-3 w-full">
           <button
             onClick={onSkip}
-            className="flex-1 py-3 rounded-xl text-sm font-bold"
+            className="flex-1 py-[13px] rounded-xl text-sm font-bold"
             style={{ background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a' }}
           >
             Pular
           </button>
           <button
             onClick={() => onSave(rating)}
-            className="flex-1 py-3 rounded-xl text-sm font-bold"
+            className="flex-1 py-[13px] rounded-xl text-sm font-bold"
             style={{ background: rating > 0 ? '#f5b730' : '#1a1a1a', color: rating > 0 ? '#000' : '#444', border: '1px solid #2a2a2a', transition: 'all 0.2s' }}
           >
             Salvar
