@@ -226,6 +226,7 @@ export function Profile() {
   const { items } = useLibrary()
   const navigate = useNavigate()
   const { unlockedIds } = useAchievementsContext()
+  const [tab, setTab] = useState<'resumo' | 'conquistas'>('resumo')
 
   const pushSupported = isPushSupported()
   const [pushEnabled, setPushEnabled] = useState(false)
@@ -395,12 +396,12 @@ export function Profile() {
   ]
 
   return (
-    <div className="py-6">
+    <div>
       {/* cabeçalho */}
-      <div className="flex items-center gap-4 mb-8 px-4">
+      <div className="flex items-center gap-4 px-4" style={{ paddingTop: '24px', paddingBottom: '20px' }}>
         {user?.photoURL
-          ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="w-16 h-16 rounded-full" />
-          : <img src="/icon-192.png" alt="JáVi" className="w-16 h-16 rounded-full" />
+          ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="w-14 h-14 rounded-full" />
+          : <img src="/icon-192.png" alt="JáVi" className="w-14 h-14 rounded-full" />
         }
         <div>
           <p className="text-white font-bold text-lg">{user?.displayName}</p>
@@ -408,109 +409,108 @@ export function Profile() {
         </div>
       </div>
 
-      {/* grid de contagens */}
-      <div className="grid grid-cols-4 gap-2 px-4" style={{ marginBottom: '28px' }}>
-        {([
-          { status: 'watching',  count: watching.length,  label: 'Assistindo'  },
-          { status: 'watched',   count: watched.length,   label: 'Assistidos'  },
-          { status: 'watchlist', count: watchlist.length, label: 'Quero ver'   },
-          { status: 'abandoned', count: abandoned.length, label: 'Abandonados' },
-        ] as const).map(({ status, count, label }) => (
-          <button
-            key={status}
-            onClick={() => navigate(`/lista/${status}`)}
-            className="bg-[#111] rounded-xl p-3 text-center active:bg-[#1a1a1a] transition-colors"
-          >
-            <p className="text-white font-black text-xl">{count}</p>
-            <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>{label}</p>
-          </button>
-        ))}
-      </div>
-
-      {/* listas de posters */}
-      <SeriesSection title="Assistindo"  items={watching}  />
-      <SeriesSection title="Quero ver"   items={watchlist} />
-      <AbandonedSection items={abandoned} />
-
-      {/* estatísticas */}
-      <div className="px-4" style={{ paddingTop: '32px' }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-white font-black text-xl">Estatísticas</p>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {statCards.map(card => (
-            <StatCard key={card.title} icon={card.icon} title={card.title} loading={card.loading}>
-              {card.content}
-            </StatCard>
-          ))}
-        </div>
-      </div>
-
-      {/* conquistas */}
-      <div className="px-4" style={{ paddingTop: '32px', paddingBottom: '8px' }}>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-white font-black text-xl">Conquistas</p>
-          <span className="text-[#555] text-xs font-bold">{unlockedIds.size}/{ACHIEVEMENTS.length}</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          {ACHIEVEMENTS.map(a => (
-            <AchievementCard key={a.id} a={a} unlocked={unlockedIds.has(a.id)} />
-          ))}
-        </div>
-      </div>
-
-      {/* toggle de notificações push */}
-      {pushSupported && (
-        <div className="px-4" style={{ paddingTop: '24px' }}>
-          <button
-            onClick={handlePushToggle}
-            className="rounded-2xl w-full flex items-center justify-between active:opacity-70"
-            style={{ background: '#111', border: '1px solid #222', padding: '16px 20px' }}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🔔</span>
-              <div className="text-left">
-                <p className="text-white text-sm font-bold">Notificações</p>
-                <p className="text-[10px] font-medium" style={{ color: '#555' }}>
-                  Avisar quando um novo episódio for ao ar
-                </p>
-              </div>
-            </div>
-            <div
-              className="flex items-center rounded-full flex-shrink-0"
-              style={{
-                width: '44px',
-                height: '24px',
-                background: pushEnabled ? '#f5b730' : '#333',
-                padding: '2px',
-                transition: 'background 0.2s',
-              }}
-            >
-              <div
-                className="rounded-full bg-white"
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  transform: pushEnabled ? 'translateX(20px)' : 'translateX(0)',
-                  transition: 'transform 0.2s',
-                }}
-              />
-            </div>
-          </button>
-        </div>
-      )}
-
-      {/* botão sair */}
-      <div className="px-4" style={{ paddingTop: '24px', paddingBottom: '16px' }}>
-        <button
-          onClick={logout}
-          className="rounded-xl font-medium"
-          style={{ background: '#e05555', color: '#fff', padding: '13px', fontSize: '14px', width: '90%', display: 'block', margin: '0 auto' }}
-        >
-          Sair da conta
+      {/* tabs */}
+      <div className="flex border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">
+        <button className={`btn flex-1 ${tab === 'resumo' ? 'btn-active' : ''}`} onClick={() => setTab('resumo')}>
+          RESUMO
+        </button>
+        <button className={`btn flex-1 ${tab === 'conquistas' ? 'btn-active' : ''}`} onClick={() => setTab('conquistas')}>
+          CONQUISTAS {unlockedIds.size > 0 && <span style={{ fontSize: '10px', opacity: 0.7 }}>({unlockedIds.size}/{ACHIEVEMENTS.length})</span>}
         </button>
       </div>
 
+      {/* ── aba resumo ── */}
+      {tab === 'resumo' && (
+        <div className="pb-6">
+          {/* grid de contagens */}
+          <div className="grid grid-cols-4 gap-2 px-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
+            {([
+              { status: 'watching',  count: watching.length,  label: 'Assistindo'  },
+              { status: 'watched',   count: watched.length,   label: 'Assistidos'  },
+              { status: 'watchlist', count: watchlist.length, label: 'Quero ver'   },
+              { status: 'abandoned', count: abandoned.length, label: 'Abandonados' },
+            ] as const).map(({ status, count, label }) => (
+              <button
+                key={status}
+                onClick={() => navigate(`/lista/${status}`)}
+                className="bg-[#111] rounded-xl p-3 text-center active:bg-[#1a1a1a] transition-colors"
+              >
+                <p className="text-white font-black text-xl">{count}</p>
+                <p className="font-black text-[10px] mt-1" style={{ color: '#f5b730' }}>{label}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* listas de posters */}
+          <SeriesSection title="Assistindo" items={watching} />
+          <SeriesSection title="Quero ver"  items={watchlist} />
+          <AbandonedSection items={abandoned} />
+
+          {/* estatísticas */}
+          <div className="px-4" style={{ paddingTop: '28px' }}>
+            <p className="text-white font-black text-xl mb-4">Estatísticas</p>
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {statCards.map(card => (
+                <StatCard key={card.title} icon={card.icon} title={card.title} loading={card.loading}>
+                  {card.content}
+                </StatCard>
+              ))}
+            </div>
+          </div>
+
+          {/* toggle de notificações push */}
+          {pushSupported && (
+            <div className="px-4" style={{ paddingTop: '24px' }}>
+              <button
+                onClick={handlePushToggle}
+                className="rounded-2xl w-full flex items-center justify-between active:opacity-70"
+                style={{ background: '#111', border: '1px solid #222', padding: '16px 20px' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔔</span>
+                  <div className="text-left">
+                    <p className="text-white text-sm font-bold">Notificações</p>
+                    <p className="text-[10px] font-medium" style={{ color: '#555' }}>
+                      Avisar quando um novo episódio for ao ar
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className="flex items-center rounded-full flex-shrink-0"
+                  style={{ width: '44px', height: '24px', background: pushEnabled ? '#f5b730' : '#333', padding: '2px', transition: 'background 0.2s' }}
+                >
+                  <div
+                    className="rounded-full bg-white"
+                    style={{ width: '20px', height: '20px', transform: pushEnabled ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 0.2s' }}
+                  />
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* botão sair */}
+          <div className="px-4" style={{ paddingTop: '20px', paddingBottom: '8px' }}>
+            <button
+              onClick={logout}
+              className="rounded-xl font-medium"
+              style={{ background: '#e05555', color: '#fff', padding: '13px', fontSize: '14px', width: '90%', display: 'block', margin: '0 auto' }}
+            >
+              Sair da conta
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── aba conquistas ── */}
+      {tab === 'conquistas' && (
+        <div className="px-4" style={{ paddingTop: '20px', paddingBottom: '24px' }}>
+          <div className="flex flex-col gap-2">
+            {ACHIEVEMENTS.map(a => (
+              <AchievementCard key={a.id} a={a} unlocked={unlockedIds.has(a.id)} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
