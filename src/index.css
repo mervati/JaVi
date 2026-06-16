@@ -405,3 +405,15 @@ body {
   border-top: 1px solid #1a1a1a;
   margin-top: 16px;
 }
+
+/* Feedback de toque em dispositivos touch */
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled) {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform 80ms ease !important;
+  }
+  button:not(:disabled):active {
+    transform: scale(0.96);
+  }
+}
