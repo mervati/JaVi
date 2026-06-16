@@ -4,6 +4,46 @@ import { RefreshContext } from './contexts/RefreshContext'
 import { LoginPage } from './components/LoginPage'
 import { BottomNav } from './components/BottomNav'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+function UpdatePrompt() {
+  const { needRefresh: [needRefresh, setNeedRefresh], updateServiceWorker } = useRegisterSW()
+  if (!needRefresh) return null
+  return (
+    <>
+      <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setNeedRefresh(false)} />
+      <div
+        className="fixed z-[60] rounded-2xl flex flex-col items-center"
+        style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
+      >
+        <div className="w-10 h-1 rounded-full" style={{ background: '#333', marginBottom: '20px' }} />
+        <p className="text-[#888] text-xs font-bold uppercase tracking-widest mb-2">Nova versão</p>
+        <p className="text-white font-black text-lg text-center leading-tight mb-3 px-2">
+          Atualização disponível
+        </p>
+        <p className="text-[#666] text-sm text-center leading-relaxed px-2" style={{ marginBottom: '20px' }}>
+          Uma nova versão do app está pronta. Deseja atualizar agora?
+        </p>
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={() => setNeedRefresh(false)}
+            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            style={{ background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }}
+          >
+            Agora não
+          </button>
+          <button
+            onClick={() => updateServiceWorker(true)}
+            className="flex-1 py-[13px] rounded-xl text-[15px] font-bold"
+            style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
+          >
+            Atualizar
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
 
 const Home        = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })))
 const Search      = lazy(() => import('./pages/Search').then(m => ({ default: m.Search })))
@@ -171,6 +211,7 @@ function AppContent() {
         </main>
 
         <BottomNav />
+        <UpdatePrompt />
       </div>
     </RefreshContext.Provider>
   )
