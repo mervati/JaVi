@@ -162,11 +162,6 @@ function AbandonedSection({ items }: { items: LibraryItem[] }) {
 
 // ── achievement card ──────────────────────────────────────────────────────────
 
-const TIER_COLORS: Record<string, string> = {
-  Bronze: '#c87833',
-  Prata: '#aaaaaa',
-  Ouro: '#e6b800',
-}
 
 function AchievementCard({ a, unlocked }: { a: AchievementDef; unlocked: boolean }) {
   return (
