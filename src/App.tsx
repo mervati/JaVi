@@ -33,7 +33,7 @@ function UpdatePrompt() {
             Agora não
           </button>
           <button
-            onClick={() => updateServiceWorker(true)}
+            onClick={() => { sessionStorage.setItem('app_just_updated', '1'); updateServiceWorker(true) }}
             className="flex-1 py-[14px] rounded-xl text-[15px] font-bold"
             style={{ background: '#f5b730', color: '#000', border: '1px solid #e6a820' }}
           >
@@ -63,6 +63,14 @@ function AppContent() {
   const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
 
+  const [showUpdatedToast, setShowUpdatedToast] = useState(() => sessionStorage.getItem('app_just_updated') === '1')
+  useEffect(() => {
+    if (showUpdatedToast) {
+      sessionStorage.removeItem('app_just_updated')
+      const t = setTimeout(() => setShowUpdatedToast(false), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [showUpdatedToast])
 
   const [pullY, setPullY] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -212,6 +220,19 @@ function AppContent() {
 
         <BottomNav />
         <UpdatePrompt />
+        {showUpdatedToast && (
+          <div
+            className="fixed z-[70] rounded-2xl flex items-center gap-3"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 80px)', left: '16px', right: '16px', background: '#1a1a1a', border: '1px solid #2a2a2a', padding: '14px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.7)' }}
+          >
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#4caf50' }}>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-white text-sm font-semibold">App atualizado com sucesso!</p>
+          </div>
+        )}
       </div>
     </RefreshContext.Provider>
   )
