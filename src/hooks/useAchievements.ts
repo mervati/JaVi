@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { getDetails, getSeriesDetails } from '../lib/tmdb'
@@ -161,6 +161,17 @@ export function useAchievements(items: LibraryItem[]) {
       }
 
       if (cancelled) return
+
+      // IDs rastreados externamente — nunca revogar automaticamente
+      const MANUAL = new Set(['sommelier', 'volta-passado', 'maratonista', 'sem-olhar', 'indeciso', 'dormiu'])
+
+      // Remove conquistas que não são mais válidas
+      const toRemove = Array.from(unlockedRef.current).filter(id => !should.has(id) && !MANUAL.has(id))
+      for (const id of toRemove) {
+        try {
+          await deleteDoc(doc(db, 'users', user!.uid, 'achievements', id))
+        } catch { /* non-blocking */ }
+      }
 
       const newOnes = Array.from(should).filter(id => !unlockedRef.current.has(id))
       for (const id of newOnes) {
