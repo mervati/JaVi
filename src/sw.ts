@@ -7,6 +7,7 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] }
 
+self.addEventListener('install', () => self.skipWaiting())
 clientsClaim()
 precacheAndRoute(self.__WB_MANIFEST)
 
