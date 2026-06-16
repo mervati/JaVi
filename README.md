@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.3.0-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.4.0-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -20,7 +20,8 @@ Aplicativo PWA para acompanhar filmes e séries que você já viu — ou quer ve
 - **Confete ao concluir série** — animação disparada ao assistir todos os episódios
 - **Avaliação por estrelas** — clique ou arraste para dar nota a filmes e séries concluídos
 - **Elenco** — veja o elenco completo com foto, nome real e personagem na aba "Sobre" de cada título
-- **Perfil** — estatísticas de uso: episódios assistidos, filmes assistidos, tempo total vendo TV e filmes
+- **Perfil** — tabs Resumo (estatísticas, listas, notificações) e Conquistas (23 achievements desbloqueáveis com pixel art)
+- **Conquistas** — sistema de achievements com critérios automáticos (gêneros TMDB, horário, sequência de dias) e manuais
 - **Busca e Explorar** — pesquise qualquer título ou navegue por tendências, mais bem avaliados e lançamentos
 - **Login com Google** — autenticação via Firebase
 
@@ -52,6 +53,15 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.4.0
+- `feat` Sistema de conquistas com 23 achievements desbloqueáveis e pixel art individual
+- `feat` Critérios automáticos: gêneros via TMDB (Terror, Romance, Documentário, países), sequência de dias, horário de acesso
+- `feat` Critérios manuais: Sommelier de Trailer (5 trailers), De Volta para o Passado (reassistir série), Maratonista, Sem Olhar para Trás, O Indeciso, Dormiu no Ponto
+- `feat` Toast global de conquista desbloqueada (aparece em qualquer tela)
+- `feat` Conquistas revogáveis: critérios computados são removidos automaticamente se o usuário desfaz a condição
+- `feat` Devorador de Séries em 3 tiers com imagens distintas (Bronze, Prata, Ouro)
+- `feat` Perfil reorganizado em tabs "Resumo" e "Conquistas"
 
 ### v1.3.0
 - `feat` Carrossel "Continuar assistindo" na Home com poster, próximo ep e barra de progresso
