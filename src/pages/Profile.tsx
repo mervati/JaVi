@@ -13,7 +13,7 @@ import {
   unsubscribeFromPush,
 } from '../lib/pushNotifications'
 import type { LibraryItem } from '../hooks/useLibrary'
-import { useAchievements } from '../hooks/useAchievements'
+import { useAchievementsContext } from '../contexts/AchievementsContext'
 import { ACHIEVEMENTS, type AchievementDef } from '../lib/achievements'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -170,39 +170,56 @@ const TIER_COLORS: Record<string, string> = {
 
 function AchievementCard({ a, unlocked }: { a: AchievementDef; unlocked: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div
+      className="flex items-center gap-3"
+      style={{
+        padding: '12px 14px',
+        borderRadius: '16px',
+        background: unlocked ? '#111' : '#0d0d0d',
+        border: `1px solid ${unlocked ? '#2a2a2a' : '#161616'}`,
+        opacity: unlocked ? 1 : 0.55,
+      }}
+    >
       <div
-        className="relative w-full rounded-2xl overflow-hidden"
-        style={{ aspectRatio: '1', background: '#111', border: `1px solid ${unlocked ? '#2a2a2a' : '#161616'}` }}
+        className="relative flex-shrink-0 overflow-hidden"
+        style={{ width: 56, height: 56, borderRadius: 10, background: '#fff' }}
       >
         <img
           src={a.image}
           alt={a.name}
-          className="w-full h-full object-contain p-2"
-          style={!unlocked ? { filter: 'grayscale(1)', opacity: 0.35 } : undefined}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+            filter: !unlocked ? 'grayscale(1)' : undefined,
+          }}
         />
-        {a.tier && (
-          <div
-            className="absolute top-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[8px] font-black"
-            style={{ background: TIER_COLORS[a.tier] ?? '#555', color: '#000', opacity: unlocked ? 1 : 0.45 }}
-          >
-            {a.tier.toUpperCase()}
-          </div>
-        )}
         {!unlocked && (
-          <div className="absolute inset-0 flex items-end justify-end p-2">
-            <svg className="w-4 h-4" fill="#333" viewBox="0 0 24 24">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
+            <svg className="w-4 h-4" fill="#555" viewBox="0 0 24 24">
               <path d="M18 10h-1V7c0-2.76-2.24-5-5-5S7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2zm-6 7c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-7H8.9V7c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v3z"/>
             </svg>
           </div>
         )}
       </div>
-      <p
-        className="text-[10px] font-bold text-center leading-tight w-full px-0.5"
-        style={{ color: unlocked ? '#ddd' : '#383838' }}
-      >
-        {a.name}{a.tier ? ` ${a.tier}` : ''}
-      </p>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-base font-bold leading-tight" style={{ color: unlocked ? '#fff' : '#444' }}>
+            {a.name}
+          </p>
+        </div>
+        <p className="text-[13px] mt-0.5 leading-tight" style={{ color: unlocked ? '#666' : '#333' }}>
+          {a.description}
+        </p>
+      </div>
+
+      {unlocked && (
+        <svg className="w-4 h-4 flex-shrink-0" fill="#f5b730" viewBox="0 0 24 24">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+        </svg>
+      )}
     </div>
   )
 }
@@ -213,7 +230,7 @@ export function Profile() {
   const { user, logout } = useAuth()
   const { items } = useLibrary()
   const navigate = useNavigate()
-  const { unlockedIds, newUnlock, clearNewUnlock } = useAchievements(items)
+  const { unlockedIds } = useAchievementsContext()
 
   const pushSupported = isPushSupported()
   const [pushEnabled, setPushEnabled] = useState(false)
@@ -440,7 +457,7 @@ export function Profile() {
           <p className="text-white font-black text-xl">Conquistas</p>
           <span className="text-[#555] text-xs font-bold">{unlockedIds.size}/{ACHIEVEMENTS.length}</span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col gap-2">
           {ACHIEVEMENTS.map(a => (
             <AchievementCard key={a.id} a={a} unlocked={unlockedIds.has(a.id)} />
           ))}
@@ -499,39 +516,6 @@ export function Profile() {
         </button>
       </div>
 
-      {/* toast: conquista desbloqueada */}
-      {newUnlock && (
-        <div
-          className="fixed z-[70] left-4 right-4 flex items-center gap-3 rounded-2xl"
-          style={{
-            bottom: 'calc(env(safe-area-inset-bottom) + 84px)',
-            background: '#1a1a1a',
-            border: '1px solid #f5b730',
-            padding: '14px 16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
-          }}
-        >
-          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: '#111' }}>
-            <img src={newUnlock.image} alt="" className="w-full h-full object-contain p-1" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[#f5b730] text-[10px] font-black uppercase tracking-widest mb-0.5">
-              Conquista desbloqueada!
-            </p>
-            <p className="text-white font-bold text-sm leading-tight">
-              {newUnlock.name}{newUnlock.tier ? ` ${newUnlock.tier}` : ''}
-            </p>
-            <p className="text-[#666] text-[11px] leading-tight mt-0.5">{newUnlock.description}</p>
-          </div>
-          <button
-            onClick={clearNewUnlock}
-            className="text-[#555] flex-shrink-0"
-            style={{ fontSize: '22px', lineHeight: 1 }}
-          >
-            ×
-          </button>
-        </div>
-      )}
     </div>
   )
 }

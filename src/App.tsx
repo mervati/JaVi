@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { RefreshContext } from './contexts/RefreshContext'
+import { AchievementsProvider, useAchievementsContext } from './contexts/AchievementsContext'
 import { LoginPage } from './components/LoginPage'
 import { BottomNav } from './components/BottomNav'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
@@ -60,6 +61,7 @@ function AppContent() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { newUnlock, clearNewUnlock } = useAchievementsContext()
   const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
 
@@ -232,6 +234,23 @@ function AppContent() {
             <p className="text-white text-sm font-semibold">App atualizado com sucesso!</p>
           </div>
         )}
+
+        {newUnlock && (
+          <div
+            className="fixed z-[70] left-4 right-4 flex items-center gap-3 rounded-2xl"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 84px)', background: '#1a1a1a', border: '1px solid #f5b730', padding: '14px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.8)' }}
+          >
+            <div className="flex-shrink-0 overflow-hidden" style={{ width: 44, height: 44, borderRadius: 8, background: '#fff' }}>
+              <img src={newUnlock.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[#f5b730] text-[10px] font-black uppercase tracking-widest mb-0.5">Conquista desbloqueada!</p>
+              <p className="text-white font-bold text-sm leading-tight">{newUnlock.name}{newUnlock.tier ? ` ${newUnlock.tier}` : ''}</p>
+              <p className="text-[#666] text-[11px] leading-tight mt-0.5">{newUnlock.description}</p>
+            </div>
+            <button onClick={clearNewUnlock} className="text-[#555] flex-shrink-0" style={{ fontSize: '22px', lineHeight: 1 }}>×</button>
+          </div>
+        )}
       </div>
     </RefreshContext.Provider>
   )
@@ -241,8 +260,10 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppContent />
-        <UpdatePrompt />
+        <AchievementsProvider>
+          <AppContent />
+          <UpdatePrompt />
+        </AchievementsProvider>
       </BrowserRouter>
     </AuthProvider>
   )
