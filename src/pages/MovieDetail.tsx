@@ -45,7 +45,16 @@ export function MovieDetail() {
   const [tab, setTab] = useState<'sobre' | 'elenco'>('sobre')
   const [loading, setLoading] = useState(true)
   const [showRating, setShowRating] = useState(false)
+  const [showStickyBack, setShowStickyBack] = useState(false)
   const { saveItem, removeItem, getItem } = useLibrary()
+
+  useEffect(() => {
+    const container = document.querySelector('main')
+    if (!container) return
+    const onScroll = () => setShowStickyBack(container.scrollTop > 180)
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [])
 
   const movieId = Number(id)
   const item = getItem(movieId, 'movie')
@@ -196,7 +205,14 @@ export function MovieDetail() {
         </div>
       )}
 
-      <div className="flex border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">
+      <div className="flex items-center border-b border-[#1a1a1a] sticky top-0 bg-[#0a0a0a] z-10">
+        {showStickyBack && (
+          <button onClick={() => navigate(-1)} className="flex items-center justify-center w-11 h-11 flex-shrink-0 text-white">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         {(['sobre', 'elenco'] as const).map(t => (
           <button
             key={t}
