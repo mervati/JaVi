@@ -568,6 +568,16 @@ export function SeriesDetail() {
     }
   }
 
+  function handleAbandon() {
+    if (!series) return
+    const existing = getItem(series.id, 'tv')
+    if (existing) {
+      saveItem({ ...existing, status: 'abandoned' })
+    } else {
+      saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'abandoned', rating: 0, addedAt: Date.now() })
+    }
+  }
+
   async function handleConfirmWatchlist() {
     if (!series) return
     setConfirmingWatchlist(true)
@@ -773,6 +783,15 @@ export function SeriesDetail() {
             >
               {label}
             </button>
+            {s === 'watching' && (
+              <button
+                onClick={handleAbandon}
+                className="py-4 rounded-xl text-sm font-bold"
+                style={{ background: '#e05555', color: '#fff', border: '1px solid #c04444', paddingLeft: '5px', paddingRight: '5px' }}
+              >
+                Abandonar
+              </button>
+            )}
           </div>
         )
       })()}

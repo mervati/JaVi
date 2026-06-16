@@ -1,7 +1,7 @@
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
+import { NetworkFirst, CacheFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 
@@ -13,10 +13,11 @@ precacheAndRoute(self.__WB_MANIFEST)
 
 registerRoute(
   ({ url }) => url.href.startsWith('https://api.themoviedb.org/'),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'tmdb-api',
+    networkTimeoutSeconds: 5,
     plugins: [
-      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 3 }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
@@ -63,8 +64,9 @@ self.addEventListener('notificationclick', (event) => {
   const url = (event.notification.data?.url as string | undefined) ?? '/'
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((list) => {
-      for (const client of list) {
-        if ('focus' in client) return (client as WindowClient).focus()
+      if (list.length > 0) {
+        const client = list[0] as WindowClient
+        return client.navigate(url).then(c => c?.focus())
       }
       return self.clients.openWindow(url)
     })
