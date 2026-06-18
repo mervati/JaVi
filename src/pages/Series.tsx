@@ -323,6 +323,19 @@ function seriesStatusLabel(status: string): string {
   return 'Renovada, sem data de estreia'
 }
 
+function buildGCalUrl(title: string, nextEp: { air_date: string; season_number: number; episode_number: number; name: string }): string {
+  const start = nextEp.air_date.replace(/-/g, '')
+  const d = new Date(nextEp.air_date + 'T12:00:00')
+  d.setDate(d.getDate() + 1)
+  const end = d.toISOString().slice(0, 10).replace(/-/g, '')
+  const epLabel = nextEp.name === 'Estreia'
+    ? 'Estreia'
+    : `T${String(nextEp.season_number).padStart(2, '0')} E${String(nextEp.episode_number).padStart(2, '0')} – ${nextEp.name}`
+  const text = encodeURIComponent(`${title} – ${epLabel}`)
+  const details = encodeURIComponent(`Novo episódio de ${title} no ar!`)
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`
+}
+
 function CalendarioTab() {
   const { items } = useLibrary()
   const navigate = useNavigate()
@@ -429,9 +442,21 @@ function CalendarioTab() {
                   </>
                 )}
               </div>
-              <svg className="w-4 h-4 text-[#333] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <a
+                href={buildGCalUrl(item.title, nextEp!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex-shrink-0 p-1.5 rounded-lg active:bg-[#1a1a1a]"
+                aria-label="Adicionar ao Google Calendar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="#f5b730" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </a>
             </div>
           ))}
         </div>

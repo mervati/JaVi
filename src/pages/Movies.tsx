@@ -27,6 +27,16 @@ interface MovieCalEntry {
   releaseDate: string | null
 }
 
+function buildMovieGCalUrl(title: string, releaseDate: string): string {
+  const start = releaseDate.replace(/-/g, '')
+  const d = new Date(releaseDate + 'T12:00:00')
+  d.setDate(d.getDate() + 1)
+  const end = d.toISOString().slice(0, 10).replace(/-/g, '')
+  const text = encodeURIComponent(`${title} – Estreia nos cinemas`)
+  const details = encodeURIComponent(`Estreia de ${title} nos cinemas!`)
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`
+}
+
 function MoviesCalendarioTab() {
   const { items } = useLibrary()
   const navigate = useNavigate()
@@ -98,7 +108,7 @@ function MoviesCalendarioTab() {
               {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
             </span>
           </div>
-          {dayEntries.map(({ item }) => (
+          {dayEntries.map(({ item, releaseDate }) => (
             <div
               key={item.id}
               className="flex items-center gap-3 px-5 py-3 border-b border-[#1a1a1a] active:bg-[#111] cursor-pointer"
@@ -111,9 +121,21 @@ function MoviesCalendarioTab() {
                 <p className="text-white font-black text-sm line-clamp-2">{item.title}</p>
                 <p className="text-[#555] text-xs mt-0.5">Estreia em breve</p>
               </div>
-              <svg className="w-4 h-4 text-[#333] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <a
+                href={buildMovieGCalUrl(item.title, releaseDate!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex-shrink-0 p-1.5 rounded-lg active:bg-[#1a1a1a]"
+                aria-label="Adicionar ao Google Calendar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="#f5b730" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </a>
             </div>
           ))}
         </div>
