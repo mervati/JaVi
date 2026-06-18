@@ -484,6 +484,73 @@ function ContinuarAssistindo() {
   )
 }
 
+function MeSurpreenda() {
+  const { items } = useLibrary()
+  const navigate = useNavigate()
+  const [pick, setPick] = useState<LibraryItem | null>(null)
+
+  const watchlist = items.filter(i => i.status === 'watchlist')
+  if (watchlist.length === 0) return null
+
+  function sortear() {
+    const idx = Math.floor(Math.random() * watchlist.length)
+    setPick(watchlist[idx])
+  }
+
+  return (
+    <>
+      <div style={{ padding: '0 20px 16px' }}>
+        <button
+          onClick={sortear}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl active:opacity-70"
+          style={{ background: '#111', border: '1px solid #222', padding: '13px 16px' }}
+        >
+          <span style={{ fontSize: '16px' }}>🎲</span>
+          <span className="text-white font-bold text-sm">Me surpreenda</span>
+          <span className="text-[#444] text-xs font-medium ml-1">{watchlist.length} na lista</span>
+        </button>
+      </div>
+
+      {pick && (
+        <>
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={() => setPick(null)} />
+          <div
+            className="fixed z-50 rounded-2xl flex flex-col items-center"
+            style={{ background: '#0f0f0f', border: '1px solid #222', padding: '24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '320px' }}
+          >
+            <div className="w-10 h-1 rounded-full mb-5" style={{ background: '#333' }} />
+            <div className="rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ width: '120px', height: '180px' }}>
+              <PosterImage src={getPosterUrl(pick.poster)} alt={pick.title} />
+            </div>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border mb-2 ${
+              pick.type === 'movie' ? 'text-[#4a9eff] border-[#4a9eff]' : 'text-[#a78bfa] border-[#a78bfa]'
+            }`}>
+              {pick.type === 'movie' ? 'FILME' : 'SÉRIE'}
+            </span>
+            <p className="text-white font-black text-base text-center leading-tight px-2 mb-5">{pick.title}</p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={sortear}
+                className="flex-1 py-[13px] rounded-xl text-sm font-bold"
+                style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a' }}
+              >
+                🎲 Outro!
+              </button>
+              <button
+                onClick={() => { setPick(null); navigate(pick.type === 'movie' ? `/movie/${pick.id}` : `/series/${pick.id}`) }}
+                className="flex-1 py-[13px] rounded-xl text-sm font-bold"
+                style={{ background: '#f5b730', color: '#000' }}
+              >
+                Ver detalhes
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 const TABS: { key: MainTab; label: string }[] = [
   { key: 'paravoc',   label: 'Para você' },
   { key: 'feed',      label: 'Feed' },
@@ -513,6 +580,7 @@ export function Home() {
       </div>
 
       <ContinuarAssistindo />
+      <MeSurpreenda />
       <div>
         {tab === 'paravoc'    && <ParaVoceTab   key={refreshKey} />}
         {tab === 'feed'       && <FeedTab        key={refreshKey} />}
