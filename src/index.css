@@ -55,6 +55,25 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes shuffle-flip {
+  0%   { transform: scaleX(1) scaleY(1);    opacity: 1;   }
+  40%  { transform: scaleX(0) scaleY(0.92); opacity: 0.2; }
+  60%  { transform: scaleX(0) scaleY(0.92); opacity: 0.2; }
+  100% { transform: scaleX(1) scaleY(1);    opacity: 1;   }
+}
+
+@keyframes shuffle-land {
+  0%   { transform: scale(0.72); opacity: 0;   }
+  60%  { transform: scale(1.07); opacity: 1;   }
+  80%  { transform: scale(0.97);              }
+  100% { transform: scale(1);                 }
+}
+
+@keyframes bounce-dot {
+  from { transform: translateY(0);    opacity: 0.35; }
+  to   { transform: translateY(-6px); opacity: 1;    }
+}
+
 @keyframes poster-shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }

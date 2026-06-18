@@ -487,14 +487,49 @@ function ContinuarAssistindo() {
 function MeSurpreenda() {
   const { items } = useLibrary()
   const navigate = useNavigate()
-  const [pick, setPick] = useState<LibraryItem | null>(null)
+  const [phase, setPhase] = useState<'idle' | 'spinning' | 'result'>('idle')
+  const [displayed, setDisplayed] = useState<LibraryItem | null>(null)
+  const [flipKey, setFlipKey] = useState(0)
 
   const watchlist = items.filter(i => i.status === 'watchlist')
   if (watchlist.length === 0) return null
 
+  function show(item: LibraryItem) {
+    setDisplayed(item)
+    setFlipKey(k => k + 1)
+  }
+
   function sortear() {
-    const idx = Math.floor(Math.random() * watchlist.length)
-    setPick(watchlist[idx])
+    if (phase === 'spinning') return
+    const final = watchlist[Math.floor(Math.random() * watchlist.length)]
+    setPhase('spinning')
+    show(watchlist[Math.floor(Math.random() * watchlist.length)])
+
+    // caça-níquel: rápido → médio → lento → pousa
+    const schedule = [
+      ...Array(10).fill(80),
+      ...Array(5).fill(160),
+      ...Array(3).fill(300),
+      ...Array(2).fill(450),
+    ]
+    let acc = 0
+    schedule.forEach((delay, i) => {
+      acc += delay
+      setTimeout(() => {
+        if (i === schedule.length - 1) {
+          show(final)
+          setPhase('result')
+        } else {
+          show(watchlist[Math.floor(Math.random() * watchlist.length)])
+        }
+      }, acc)
+    })
+  }
+
+  function fechar() {
+    if (phase === 'spinning') return
+    setPhase('idle')
+    setDisplayed(null)
   }
 
   return (
@@ -511,39 +546,73 @@ function MeSurpreenda() {
         </button>
       </div>
 
-      {pick && (
+      {phase !== 'idle' && (
         <>
-          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={() => setPick(null)} />
+          <div className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.88)' }} onClick={fechar} />
           <div
             className="fixed z-50 rounded-2xl flex flex-col items-center"
             style={{ background: '#0f0f0f', border: '1px solid #222', padding: '24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '320px' }}
           >
             <div className="w-10 h-1 rounded-full mb-5" style={{ background: '#333' }} />
-            <div className="rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ width: '120px', height: '180px' }}>
-              <PosterImage src={getPosterUrl(pick.poster)} alt={pick.title} />
-            </div>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border mb-2 ${
-              pick.type === 'movie' ? 'text-[#4a9eff] border-[#4a9eff]' : 'text-[#a78bfa] border-[#a78bfa]'
-            }`}>
-              {pick.type === 'movie' ? 'FILME' : 'SÉRIE'}
-            </span>
-            <p className="text-white font-black text-base text-center leading-tight px-2 mb-5">{pick.title}</p>
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={sortear}
-                className="flex-1 py-[13px] rounded-xl text-sm font-bold"
-                style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a' }}
+
+            {/* poster animado */}
+            <div style={{ width: '120px', height: '180px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', background: '#1a1a1a' }}>
+              <div
+                key={flipKey}
+                style={{
+                  width: '100%', height: '100%',
+                  animation: phase === 'result'
+                    ? 'shuffle-land 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
+                    : 'shuffle-flip 0.22s ease-in-out both',
+                }}
               >
-                🎲 Outro!
-              </button>
-              <button
-                onClick={() => { setPick(null); navigate(pick.type === 'movie' ? `/movie/${pick.id}` : `/series/${pick.id}`) }}
-                className="flex-1 py-[13px] rounded-xl text-sm font-bold"
-                style={{ background: '#f5b730', color: '#000' }}
-              >
-                Ver detalhes
-              </button>
+                {displayed && <PosterImage src={getPosterUrl(displayed.poster)} alt={displayed.title} />}
+              </div>
             </div>
+
+            {phase === 'spinning' ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex gap-1.5">
+                  {[0, 1, 2].map(i => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 7, height: 7, borderRadius: '50%', background: '#f5b730',
+                        animation: `bounce-dot 0.65s ${i * 0.13}s ease-in-out infinite alternate`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-[#444] text-[10px] font-bold uppercase tracking-widest">Sorteando...</p>
+              </div>
+            ) : (
+              <>
+                {displayed && (
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border mb-2 ${
+                    displayed.type === 'movie' ? 'text-[#4a9eff] border-[#4a9eff]' : 'text-[#a78bfa] border-[#a78bfa]'
+                  }`}>
+                    {displayed.type === 'movie' ? 'FILME' : 'SÉRIE'}
+                  </span>
+                )}
+                <p className="text-white font-black text-base text-center leading-tight px-2 mb-5">{displayed?.title}</p>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={sortear}
+                    className="flex-1 py-[13px] rounded-xl text-sm font-bold"
+                    style={{ background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a' }}
+                  >
+                    🎲 Outro!
+                  </button>
+                  <button
+                    onClick={() => { fechar(); navigate(displayed!.type === 'movie' ? `/movie/${displayed!.id}` : `/series/${displayed!.id}`) }}
+                    className="flex-1 py-[13px] rounded-xl text-sm font-bold"
+                    style={{ background: '#f5b730', color: '#000' }}
+                  >
+                    Ver detalhes
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
