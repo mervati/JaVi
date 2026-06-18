@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.4.0-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.4.1-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -53,6 +53,11 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.4.1
+- `feat` Botão de adicionar ao Google Calendar na aba Calendário de Séries e Filmes
+- Séries: abre evento com título, temporada, episódio e data de exibição
+- Filmes: abre evento com título e data de estreia nos cinemas
 
 ### v1.4.0
 - `feat` Sistema de conquistas com 23 achievements desbloqueáveis e pixel art individual
