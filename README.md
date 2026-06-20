@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.4.2-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.4.3-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -53,6 +53,9 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.4.3
+- `feat` Botão X dentro do campo de busca para limpar o texto com um toque
 
 ### v1.4.2
 - `feat` Animação de caça-níquel no "Me surpreenda": posters trocam rapidamente e desaceleram até pousar no resultado com pop elástico
