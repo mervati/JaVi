@@ -540,6 +540,9 @@ export function Series() {
   const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [calRefreshKey, setCalRefreshKey] = useState(0)
+  const [showWatching, setShowWatching] = useState(true)
+  const [showWatchlist, setShowWatchlist] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false)
 
   useRegisterRefresh(async () => setCalRefreshKey(k => k + 1))
   const [confirmItem, setConfirmItem] = useState<LibraryItem | null>(null)
@@ -600,23 +603,41 @@ export function Series() {
 
           {watching.length > 0 && (
             <div className="nec-section">
-              <div className="nec-header" style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
-                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+              <button
+                className="nec-header w-full relative flex items-center justify-center"
+                style={{ padding: '16px 20px 10px 20px' }}
+                onClick={() => setShowWatching(v => !v)}
+              >
+                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
                   ASSISTIR A SEGUIR
                 </span>
+                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showWatching ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div style={{ display: showWatching ? 'block' : 'none' }}>
+                {watching.map(item => <NextEpisodeCard key={item.id} item={item} />)}
               </div>
-              {watching.map(item => <NextEpisodeCard key={item.id} item={item} />)}
             </div>
           )}
 
           {watchlist.length > 0 && (
             <div className="series-section">
-              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
-                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+              <button
+                className="w-full relative flex items-center justify-center"
+                style={{ padding: '16px 20px 10px 20px' }}
+                onClick={() => setShowWatchlist(v => !v)}
+              >
+                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
                   QUERO VER
                 </span>
-              </div>
-              {watchlist.map(item => (
+                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showWatchlist ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showWatchlist && watchlist.map(item => (
                 <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>
@@ -624,12 +645,20 @@ export function Series() {
 
           {completed.length > 0 && (
             <div className="series-section">
-              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
-                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+              <button
+                className="w-full relative flex items-center justify-center"
+                style={{ padding: '16px 20px 10px 20px' }}
+                onClick={() => setShowCompleted(v => !v)}
+              >
+                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
                   TODAS AS SÉRIES
                 </span>
-              </div>
-              {completed.map(item => (
+                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showCompleted ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showCompleted && completed.map(item => (
                 <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>

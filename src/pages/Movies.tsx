@@ -330,6 +330,8 @@ export function Movies() {
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [confirmItem, setConfirmItem] = useState<LibraryItem | null>(null)
   const [releaseDates, setReleaseDates] = useState<Record<number, string>>({})
+  const [showActive, setShowActive] = useState(true)
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const watchlistMovies = items.filter(i => i.type === 'movie' && i.status === 'watchlist')
   const watchlistKey = watchlistMovies.map(i => i.id).join(',')
@@ -404,12 +406,20 @@ export function Movies() {
           {/* Quero ver */}
           {active.length > 0 && (
             <div>
-              <div style={{ padding: '20px 20px 10px 20px', textAlign: 'center' }}>
-                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+              <button
+                className="w-full relative flex items-center justify-center"
+                style={{ padding: '16px 20px 10px 20px' }}
+                onClick={() => setShowActive(v => !v)}
+              >
+                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
                   QUERO VER
                 </span>
-              </div>
-              {active.map(item => (
+                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showActive ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showActive && active.map(item => (
                 <SwipeableMovieRow
                   key={`${item.type}-${item.id}`}
                   item={item}
@@ -427,13 +437,21 @@ export function Movies() {
 
           {/* Assistidos/Abandonados */}
           {completed.length > 0 && (
-            <div style={active.length > 0 ? { marginTop: '24px' } : {}}>
-              <div style={{ padding: active.length > 0 ? '16px 20px 10px 20px' : '20px 20px 10px 20px', borderTop: active.length > 0 ? '1px solid #1a1a1a' : 'none', textAlign: 'center' }}>
-                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em', display: 'inline-block' }}>
+            <div style={active.length > 0 ? { marginTop: '8px', borderTop: '1px solid #1a1a1a' } : {}}>
+              <button
+                className="w-full relative flex items-center justify-center"
+                style={{ padding: '16px 20px 10px 20px' }}
+                onClick={() => setShowCompleted(v => !v)}
+              >
+                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
                   ASSISTIDOS
                 </span>
-              </div>
-              {completed.map(item => (
+                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showCompleted ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showCompleted && completed.map(item => (
                 <SwipeableMovieRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
               ))}
             </div>
