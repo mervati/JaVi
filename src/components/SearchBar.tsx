@@ -23,6 +23,12 @@ export function SearchBar({ onSearch, onClear }: Props) {
     setFocused(false)
   }
 
+  function handleClear() {
+    setValue('')
+    onClear?.()
+    inputRef.current?.focus()
+  }
+
   return (
     <div className="flex items-center gap-3 px-4 pt-4 pb-3">
       <div className="search-group">
@@ -42,7 +48,36 @@ export function SearchBar({ onSearch, onClear }: Props) {
           onChange={handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          style={value ? { paddingRight: '2.4rem' } : undefined}
         />
+        {value && (
+          <button
+            onMouseDown={e => e.preventDefault()}
+            onClick={handleClear}
+            aria-label="Limpar busca"
+            style={{
+              position: 'absolute',
+              right: '10px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: '#444',
+              border: 'none',
+              borderRadius: '50%',
+              width: '30px',
+              height: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#ccc',
+              fontSize: '22px',
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
+        )}
       </div>
       {focused && (
         <button onClick={handleCancel} className="text-[#f5b730] text-sm font-medium flex-shrink-0">
