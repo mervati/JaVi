@@ -12,7 +12,7 @@ function UpdatePrompt() {
   if (!needRefresh) return null
   return (
     <>
-      <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setNeedRefresh(false)} />
+      <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.6)' }} />
       <div
         className="fixed z-[60] rounded-2xl flex flex-col items-center"
         style={{ background: '#0f0f0f', border: '1px solid #222', padding: '28px 24px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 48px)', maxWidth: '340px' }}
