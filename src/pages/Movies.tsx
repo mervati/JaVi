@@ -295,6 +295,20 @@ function SwipeableMovieRow({ item, onRemove, isNewRelease }: { item: LibraryItem
                 />
               </div>
             )}
+            {(item.tags ?? []).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                {(item.tags ?? []).slice(0, 3).map(tag => (
+                  <span key={tag} style={{ fontSize: '10px', color: '#666', background: '#161616', border: '1px solid #252525', borderRadius: '999px', padding: '2px 7px' }}>
+                    #{tag}
+                  </span>
+                ))}
+                {(item.tags ?? []).length > 3 && (
+                  <span style={{ fontSize: '10px', color: '#444', borderRadius: '999px', padding: '2px 6px' }}>
+                    +{(item.tags ?? []).length - 3}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <button

@@ -15,11 +15,13 @@ export interface LibraryItem {
   type: 'movie' | 'tv'
   title: string
   poster: string | null
-  status: 'watched' | 'watchlist' | 'watching' | 'abandoned'
+  status: 'watched' | 'watchlist' | 'watching' | 'abandoned' | 'archived'
   rating: number
   addedAt: number
   lastWatchedAt?: number
   releaseDate?: string
+  tags?: string[]
+  sortOrder?: number
 }
 
 export function useLibrary() {

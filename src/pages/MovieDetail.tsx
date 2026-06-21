@@ -6,6 +6,7 @@ import { useLibrary } from '../hooks/useLibrary'
 import { StarRating } from '../components/StarRating'
 import { RatingPrompt } from '../components/RatingPrompt'
 import { TrailerPlayer } from '../components/TrailerPlayer'
+import { TagEditor } from '../components/TagEditor'
 
 interface Movie {
   id: number
@@ -104,6 +105,7 @@ export function MovieDetail() {
       rating: item?.rating ?? 0,
       addedAt: item?.addedAt ?? Date.now(),
       releaseDate: movie.release_date || undefined,
+      tags: item?.tags,
     })
     if (status === 'watched' && !wasWatched) setShowRating(true)
   }
@@ -234,6 +236,10 @@ export function MovieDetail() {
                 </span>
               ))}
             </div>
+          )}
+
+          {item && (
+            <TagEditor item={item} onSave={tags => saveItem({ ...item, tags })} />
           )}
 
           <p className="text-white text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>

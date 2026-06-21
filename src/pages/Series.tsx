@@ -40,6 +40,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   watchlist: { label: 'Quero ver',   color: 'text-[#f5b730] border-[#f5b730]' },
   watched:   { label: 'Concluído',   color: 'text-[#5cb85c] border-[#5cb85c]' },
   abandoned: { label: 'Abandonado',  color: 'text-[#555] border-[#555]' },
+  archived:  { label: 'Arquivada',   color: 'text-[#444] border-[#444]' },
 }
 
 interface NextEp { season: number; episode: number; name: string; displayNumber?: number }
@@ -165,7 +166,7 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
     if (offsetX <= THRESHOLD_LEFT && nextEp && !frozenNextEp) {
       await handleMarkEpisode(false)
     } else if (offsetX >= THRESHOLD_RIGHT) {
-      await saveItem({ ...item, status: 'abandoned' })
+      await saveItem({ ...item, status: 'archived' })
     }
     setOffsetX(0)
   }
@@ -235,6 +236,20 @@ function NextEpisodeCard({ item }: { item: LibraryItem }) {
               </>
             )
           })()}
+          {(item.tags ?? []).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+              {(item.tags ?? []).slice(0, 2).map(tag => (
+                <span key={tag} style={{ fontSize: '9px', color: '#555', background: '#161616', border: '1px solid #222', borderRadius: '999px', padding: '1px 6px' }}>
+                  #{tag}
+                </span>
+              ))}
+              {(item.tags ?? []).length > 2 && (
+                <span style={{ fontSize: '9px', color: '#444', padding: '1px 5px' }}>
+                  +{(item.tags ?? []).length - 2}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <EpisodeCheckbox checked={showChecked} onChange={() => handleMarkEpisode(epWatched)} size="sm" disabled={frozenNextEp != null} />
@@ -281,6 +296,20 @@ function SeriesRow({ item, onRemove }: { item: LibraryItem; onRemove: (item: Lib
             )}
             {item.status !== 'watchlist' && totalEpisodes > 0 && (
               <ProgressBar watched={watchedCount} total={totalEpisodes} status={item.status} />
+            )}
+            {(item.tags ?? []).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                {(item.tags ?? []).slice(0, 3).map(tag => (
+                  <span key={tag} style={{ fontSize: '10px', color: '#666', background: '#161616', border: '1px solid #252525', borderRadius: '999px', padding: '2px 7px' }}>
+                    #{tag}
+                  </span>
+                ))}
+                {(item.tags ?? []).length > 3 && (
+                  <span style={{ fontSize: '10px', color: '#444', borderRadius: '999px', padding: '2px 6px' }}>
+                    +{(item.tags ?? []).length - 3}
+                  </span>
+                )}
+              </div>
             )}
           </div>
           <button
@@ -525,7 +554,6 @@ function CalendarioTab() {
 
 type SortBy = 'date' | 'title' | 'rating'
 
-
 function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
   return [...arr].sort((a, b) => {
     if (by === 'title')  return a.title.localeCompare(b.title, 'pt-BR')
@@ -534,15 +562,43 @@ function sortItems(arr: LibraryItem[], by: SortBy): LibraryItem[] {
   })
 }
 
+type SectionKey = 'watching' | 'watchlist' | 'completed' | 'archived'
+const DEFAULT_SECTION_ORDER: SectionKey[] = ['watching', 'watchlist', 'completed', 'archived']
+const SECTION_ORDER_KEY = 'javi-series-section-order'
+
+function loadSectionOrder(): SectionKey[] {
+  try {
+    const stored = localStorage.getItem(SECTION_ORDER_KEY)
+    if (!stored) return [...DEFAULT_SECTION_ORDER]
+    const parsed = JSON.parse(stored) as SectionKey[]
+    const valid = parsed.filter((k): k is SectionKey => DEFAULT_SECTION_ORDER.includes(k))
+    const missing = DEFAULT_SECTION_ORDER.filter(k => !valid.includes(k))
+    return [...valid, ...missing]
+  } catch { return [...DEFAULT_SECTION_ORDER] }
+}
+
+function saveSectionOrder(order: SectionKey[]) {
+  localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(order))
+}
+
 export function Series() {
   const { items, removeItem } = useLibrary()
   const navigate  = useNavigate()
   const [tab, setTab] = useState<'lista' | 'calendario'>('lista')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [calRefreshKey, setCalRefreshKey] = useState(0)
-  const [showWatching, setShowWatching] = useState(true)
+  const [showWatching,  setShowWatching]  = useState(true)
   const [showWatchlist, setShowWatchlist] = useState(false)
   const [showCompleted, setShowCompleted] = useState(false)
+  const [showArchived,  setShowArchived]  = useState(false)
+  const [sectionOrder, setSectionOrder] = useState<SectionKey[]>(loadSectionOrder)
+  const [sectionDrag, setSectionDrag] = useState<{ fromIdx: number } | null>(null)
+  const [dropTarget, setDropTarget] = useState<number | null>(null)
+  const sectionHeaderRefs = useRef<(HTMLDivElement | null)[]>([])
+  const sectionDragRef = useRef<{ fromIdx: number } | null>(null)
+  const dropTargetRef = useRef<number | null>(null)
+  const visibleSectionsRef = useRef<SectionKey[]>([])
+  const sectionOrderRef = useRef<SectionKey[]>([])
 
   useRegisterRefresh(async () => setCalRefreshKey(k => k + 1))
   const [confirmItem, setConfirmItem] = useState<LibraryItem | null>(null)
@@ -551,6 +607,66 @@ export function Series() {
   const watching  = sortItems(series.filter(i => i.status === 'watching'), sortBy)
   const watchlist = sortItems(series.filter(i => i.status === 'watchlist'), sortBy)
   const completed = sortItems(series.filter(i => i.status === 'watched' || i.status === 'abandoned'), sortBy)
+  const archived  = sortItems(series.filter(i => i.status === 'archived'), sortBy)
+
+  const sectionConfig: Record<SectionKey, { items: LibraryItem[]; label: string; color: string; show: boolean; setShow: (v: boolean | ((b: boolean) => boolean)) => void; sectionClass: string; headerClass: string }> = {
+    watching:  { items: watching,  label: 'ASSISTIR A SEGUIR', color: '#f5b730', show: showWatching,  setShow: setShowWatching,  sectionClass: 'nec-section',    headerClass: 'nec-header w-full relative flex items-center justify-center' },
+    watchlist: { items: watchlist, label: 'QUERO VER',         color: '#f5b730', show: showWatchlist, setShow: setShowWatchlist, sectionClass: 'series-section', headerClass: 'w-full relative flex items-center justify-center' },
+    completed: { items: completed, label: 'TODAS AS SÉRIES',   color: '#f5b730', show: showCompleted, setShow: setShowCompleted, sectionClass: 'series-section', headerClass: 'w-full relative flex items-center justify-center' },
+    archived:  { items: archived,  label: 'ARQUIVADAS',        color: '#f5b730', show: showArchived,  setShow: setShowArchived,  sectionClass: 'series-section', headerClass: 'w-full relative flex items-center justify-center' },
+  }
+
+  const visibleSections = sectionOrder.filter(k => sectionConfig[k].items.length > 0)
+
+  sectionDragRef.current = sectionDrag
+  dropTargetRef.current = dropTarget
+  visibleSectionsRef.current = visibleSections
+  sectionOrderRef.current = sectionOrder
+
+  useEffect(() => {
+    if (!sectionDrag) return
+
+    function onMove(e: TouchEvent) {
+      e.preventDefault()
+      const y = e.touches[0].clientY
+      const vs = visibleSectionsRef.current
+      let target = sectionDragRef.current!.fromIdx
+      for (let i = 0; i < vs.length; i++) {
+        const ref = sectionHeaderRefs.current[i]
+        if (!ref) continue
+        const rect = ref.getBoundingClientRect()
+        if (y < rect.bottom) { target = i; break }
+        target = i
+      }
+      const clamped = Math.max(1, target)
+      if (clamped !== dropTargetRef.current) setDropTarget(clamped)
+    }
+
+    function onEnd() {
+      const from = sectionDragRef.current?.fromIdx
+      const to = dropTargetRef.current
+      const vs = visibleSectionsRef.current
+      const so = sectionOrderRef.current
+      if (from !== undefined && to !== null && to !== from) {
+        const newVisible = [...vs]
+        const [moved] = newVisible.splice(from, 1)
+        newVisible.splice(to, 0, moved)
+        const nonVisible = so.filter(k => !vs.includes(k))
+        const fullOrder = [...newVisible, ...nonVisible]
+        setSectionOrder(fullOrder)
+        saveSectionOrder(fullOrder)
+      }
+      setSectionDrag(null)
+      setDropTarget(null)
+    }
+
+    document.addEventListener('touchmove', onMove, { passive: false })
+    document.addEventListener('touchend', onEnd)
+    return () => {
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onEnd)
+    }
+  }, [sectionDrag])
 
   if (series.length === 0) {
     return (
@@ -601,67 +717,60 @@ export function Series() {
             />
           </div>
 
-          {watching.length > 0 && (
-            <div className="nec-section">
-              <button
-                className="nec-header w-full relative flex items-center justify-center"
-                style={{ padding: '16px 20px 10px 20px' }}
-                onClick={() => setShowWatching(v => !v)}
+          {visibleSections.map((key, ordIdx) => {
+            const cfg = sectionConfig[key]
+            return (
+              <div
+                key={key}
+                className={cfg.sectionClass}
+                ref={el => { sectionHeaderRefs.current[ordIdx] = el }}
+                style={sectionDrag?.fromIdx === ordIdx ? { opacity: 0.5 } : undefined}
               >
-                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
-                  ASSISTIR A SEGUIR
-                </span>
-                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
-                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showWatching ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
-                  <path d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div style={{ display: showWatching ? 'block' : 'none' }}>
-                {watching.map(item => <NextEpisodeCard key={item.id} item={item} />)}
+                {dropTarget === ordIdx && sectionDrag !== null && sectionDrag.fromIdx !== ordIdx && (
+                  <div style={{ height: '2px', background: '#f5b730', position: 'relative', zIndex: 20 }} />
+                )}
+                <button
+                  className={cfg.headerClass}
+                  style={{ padding: '16px 20px 10px 20px' }}
+                  onClick={() => cfg.setShow(v => !v)}
+                >
+                  {ordIdx > 0 && (
+                    <div
+                      onTouchStart={e => {
+                        e.stopPropagation()
+                        setSectionDrag({ fromIdx: ordIdx })
+                        setDropTarget(ordIdx)
+                      }}
+                      style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', padding: '8px 4px', color: '#555', touchAction: 'none', cursor: 'grab', zIndex: 10 }}
+                    >
+                      <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                        <circle cx="3" cy="3" r="1.5" /><circle cx="9" cy="3" r="1.5" />
+                        <circle cx="3" cy="8" r="1.5" /><circle cx="9" cy="8" r="1.5" />
+                        <circle cx="3" cy="13" r="1.5" /><circle cx="9" cy="13" r="1.5" />
+                      </svg>
+                    </div>
+                  )}
+                  <span className="boton-elegante" style={{ color: cfg.color, fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
+                    {cfg.label}
+                  </span>
+                  <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+                    style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: cfg.show ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
+                    <path d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div style={{ display: cfg.show ? 'block' : 'none' }}>
+                  {key === 'watching'
+                    ? cfg.items.map(item => <NextEpisodeCard key={item.id} item={item} />)
+                    : cfg.items.map(item => <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />)
+                  }
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })}
 
-          {watchlist.length > 0 && (
-            <div className="series-section">
-              <button
-                className="w-full relative flex items-center justify-center"
-                style={{ padding: '16px 20px 10px 20px' }}
-                onClick={() => setShowWatchlist(v => !v)}
-              >
-                <span className="boton-elegante" style={{ color: '#f5b730', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
-                  QUERO VER
-                </span>
-                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
-                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showWatchlist ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
-                  <path d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {showWatchlist && watchlist.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
-              ))}
-            </div>
-          )}
-
-          {completed.length > 0 && (
-            <div className="series-section">
-              <button
-                className="w-full relative flex items-center justify-center"
-                style={{ padding: '16px 20px 10px 20px' }}
-                onClick={() => setShowCompleted(v => !v)}
-              >
-                <span className="boton-elegante" style={{ color: '#9c7420', fontSize: '10px', padding: '6px 16px', letterSpacing: '0.12em' }}>
-                  TODAS AS SÉRIES
-                </span>
-                <svg fill="none" stroke="#555" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
-                  style={{ position: 'absolute', right: 20, top: '50%', marginTop: 4, width: 16, height: 16, transform: showCompleted ? 'translateY(-50%) rotate(0deg)' : 'translateY(-50%) rotate(-90deg)', transition: 'transform 0.2s' }}>
-                  <path d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {showCompleted && completed.map(item => (
-                <SeriesRow key={`${item.type}-${item.id}`} item={item} onRemove={setConfirmItem} />
-              ))}
-            </div>
+          {/* drop indicator at end of list */}
+          {dropTarget === visibleSections.length && sectionDrag !== null && (
+            <div style={{ height: '2px', background: '#f5b730' }} />
           )}
 
         </>

@@ -12,6 +12,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import { db } from '../lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
+import { TagEditor } from '../components/TagEditor'
 
 interface Episode {
   id: number
@@ -598,7 +599,7 @@ export function SeriesDetail() {
     setConfirmingRewatch(true)
     const existing = getItem(series.id, 'tv')
     await clearAll()
-    saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now() })
+    saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags })
     if (user) {
       try {
         await setDoc(doc(db, 'users', user.uid, 'achievements', 'volta-passado'), { unlockedAt: Date.now() }, { merge: true })
@@ -613,7 +614,7 @@ export function SeriesDetail() {
     setConfirmingWatchlist(true)
     const existing = getItem(series.id, 'tv')
     await clearAll()
-    const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now() }
+    const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags }
     saveItem(base)
     setConfirmingWatchlist(false)
     setShowWatchlistConfirm(false)
@@ -634,8 +635,8 @@ export function SeriesDetail() {
     }
     prevAllComplete.current = allComplete
 
-    // Não alterar de watchlist/abandoned para watching automaticamente — só quando o usuário marcar um episódio
-    if ((existing.status === 'watchlist' || existing.status === 'abandoned') && !allComplete) return
+    // Não alterar de watchlist/abandoned/archived para watching automaticamente — só quando o usuário marcar um episódio
+    if ((existing.status === 'watchlist' || existing.status === 'abandoned' || existing.status === 'archived') && !allComplete) return
 
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
@@ -836,17 +837,22 @@ export function SeriesDetail() {
           s === 'watching'  ? '▶ Assistindo' :
           s === 'watched'   ? '✓ Assistida' :
           s === 'abandoned' ? '✗ Abandonada' :
+          s === 'archived'  ? '📦 Arquivada' :
           'Quero ver'
         const style: React.CSSProperties =
           s === 'watchlist' ? { background: '#f5b730', color: '#000' } :
           s === 'watching'  ? { background: '#4a9eff', color: '#000' } :
           s === 'watched'   ? { background: '#4caf50', color: '#000' } :
           s === 'abandoned' ? { background: '#e05555', color: '#fff' } :
+          s === 'archived'  ? { background: '#2a2a2a', color: '#666', border: '2px solid #333' } :
           { background: '#1a1a1a', color: '#888', border: '2px solid #2a2a2a' }
         return (
           <div className="flex gap-3 px-4 py-4 border-b border-[#1a1a1a]">
             <button
-              onClick={handleWatchlistToggle}
+              onClick={s === 'archived' ? () => {
+                const existing = getItem(series.id, 'tv')
+                if (existing) saveItem({ ...existing, status: watchedCount > 0 ? 'watching' : 'watchlist' })
+              } : handleWatchlistToggle}
               className="flex-1 py-4 rounded-xl text-base font-extrabold transition-colors"
               style={style}
             >
@@ -903,6 +909,9 @@ export function SeriesDetail() {
                 </span>
               ))}
             </div>
+          )}
+          {existingItem && (
+            <TagEditor item={existingItem} onSave={tags => saveItem({ ...existingItem, tags })} />
           )}
           <p className="text-white text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
           {series.overview
