@@ -7,6 +7,7 @@ import { StarRating } from '../components/StarRating'
 import { RatingPrompt } from '../components/RatingPrompt'
 import { TrailerPlayer } from '../components/TrailerPlayer'
 import { TagEditor } from '../components/TagEditor'
+import { WatchDates } from '../components/WatchDates'
 
 interface Movie {
   id: number
@@ -106,6 +107,8 @@ export function MovieDetail() {
       addedAt: item?.addedAt ?? Date.now(),
       releaseDate: movie.release_date || undefined,
       tags: item?.tags,
+      startedAt: status === 'watchlist' ? undefined : (item?.startedAt ?? Date.now()),
+      finishedAt: status === 'watched' ? (item?.finishedAt ?? Date.now()) : undefined,
     })
     if (status === 'watched' && !wasWatched) setShowRating(true)
   }
@@ -240,6 +243,9 @@ export function MovieDetail() {
 
           {item && (
             <TagEditor item={item} onSave={tags => saveItem({ ...item, tags })} />
+          )}
+          {item && (
+            <WatchDates item={item} onSave={updates => saveItem({ ...item, ...updates })} />
           )}
 
           <p className="text-white text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>

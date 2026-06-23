@@ -4,6 +4,7 @@ import { RefreshContext } from './contexts/RefreshContext'
 import { AchievementsProvider, useAchievementsContext } from './contexts/AchievementsContext'
 import { LoginPage } from './components/LoginPage'
 import { BottomNav } from './components/BottomNav'
+import { FloatingSearch } from './components/FloatingSearch'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
@@ -221,6 +222,7 @@ function AppContent() {
         </main>
 
         <BottomNav />
+        <FloatingSearch />
         {showUpdatedToast && (
           <div
             className="fixed z-[70] rounded-2xl flex items-center gap-3"

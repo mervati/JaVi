@@ -22,6 +22,8 @@ export interface LibraryItem {
   releaseDate?: string
   tags?: string[]
   sortOrder?: number
+  startedAt?: number
+  finishedAt?: number
 }
 
 export function useLibrary() {

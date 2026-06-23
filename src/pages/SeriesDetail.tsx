@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { db } from '../lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
 import { TagEditor } from '../components/TagEditor'
+import { WatchDates } from '../components/WatchDates'
 
 interface Episode {
   id: number
@@ -553,16 +554,11 @@ export function SeriesDetail() {
     const existing = getItem(series.id, 'tv')
     if (!existing) {
       saveItem({
-        id: series.id,
-        type: 'tv',
-        title: series.name,
-        poster: series.poster_path,
-        status: 'watching',
-        rating: 0,
-        addedAt: Date.now(),
+        id: series.id, type: 'tv', title: series.name, poster: series.poster_path,
+        status: 'watching', rating: 0, addedAt: Date.now(), startedAt: Date.now(),
       })
     } else if (existing.status === 'watchlist') {
-      saveItem({ ...existing, status: 'watching' })
+      saveItem({ ...existing, status: 'watching', startedAt: existing.startedAt ?? Date.now() })
     }
   }
 
@@ -599,7 +595,7 @@ export function SeriesDetail() {
     setConfirmingRewatch(true)
     const existing = getItem(series.id, 'tv')
     await clearAll()
-    saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags })
+    saveItem({ id: series.id, type: 'tv', title: series.name, poster: series.poster_path, status: 'watching', rating: existing?.rating ?? 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags, startedAt: Date.now(), finishedAt: undefined })
     if (user) {
       try {
         await setDoc(doc(db, 'users', user.uid, 'achievements', 'volta-passado'), { unlockedAt: Date.now() }, { merge: true })
@@ -614,7 +610,7 @@ export function SeriesDetail() {
     setConfirmingWatchlist(true)
     const existing = getItem(series.id, 'tv')
     await clearAll()
-    const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags }
+    const base = { id: series.id, type: 'tv' as const, title: series.name, poster: series.poster_path, status: 'watchlist' as const, rating: 0, addedAt: existing?.addedAt ?? Date.now(), tags: existing?.tags, startedAt: undefined, finishedAt: undefined }
     saveItem(base)
     setConfirmingWatchlist(false)
     setShowWatchlistConfirm(false)
@@ -640,7 +636,10 @@ export function SeriesDetail() {
 
     const newStatus = allComplete ? 'watched' : 'watching'
     if (existing.status !== newStatus) {
-      saveItem({ ...existing, status: newStatus })
+      const dateUpdates = newStatus === 'watched'
+        ? { finishedAt: existing.finishedAt ?? Date.now() }
+        : { startedAt: existing.startedAt ?? Date.now() }
+      saveItem({ ...existing, status: newStatus, ...dateUpdates })
       if (newStatus === 'watched') setShowRating(true)
     }
   }, [watchedCount, series])
@@ -912,6 +911,9 @@ export function SeriesDetail() {
           )}
           {existingItem && (
             <TagEditor item={existingItem} onSave={tags => saveItem({ ...existingItem, tags })} />
+          )}
+          {existingItem && (
+            <WatchDates item={existingItem} onSave={updates => saveItem({ ...existingItem, ...updates })} />
           )}
           <p className="text-white text-xs font-bold uppercase tracking-wider mb-2">Sinopse</p>
           {series.overview
