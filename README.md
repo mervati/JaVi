@@ -59,6 +59,7 @@ VITE_FIREBASE_APP_ID=...
 - `feat` Seção "Arquivadas" em Séries — swipe direito em "Assistir a Seguir" arquiva a série
 - `feat` Ordenação de seções por drag-and-drop nos cabeçalhos (Assistir a Seguir, Quero Ver, Todas as Séries, Arquivadas); primeira posição bloqueada
 - `fix` Popup de atualização disponível não fecha ao clicar fora — apenas pelos botões "Agora não" e "Atualizar"
+- `fix` Input de nova tag com font-size 16px para evitar zoom automático no iOS
 
 ### v1.4.4
 - `feat` Seções colapsáveis em Séries e Filmes — "Assistir a seguir" e "Quero ver" abertas por padrão, demais recolhidas
