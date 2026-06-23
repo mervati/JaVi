@@ -5,6 +5,7 @@ import { AchievementsProvider, useAchievementsContext } from './contexts/Achieve
 import { LoginPage } from './components/LoginPage'
 import { BottomNav } from './components/BottomNav'
 import { FloatingSearch } from './components/FloatingSearch'
+import { SplashScreen } from './components/SplashScreen'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
@@ -65,6 +66,7 @@ function AppContent() {
   const { newUnlock, clearNewUnlock } = useAchievementsContext()
   const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
+  const [splashDone, setSplashDone] = useState(false)
 
   const [showUpdatedToast, setShowUpdatedToast] = useState(() => sessionStorage.getItem('app_just_updated') === '1')
   useEffect(() => {
@@ -151,12 +153,8 @@ function AppContent() {
 
   const pct = Math.min(pullY / PTR_THRESHOLD, 1)
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#f5b730] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+  if (!splashDone) {
+    return <SplashScreen done={!loading} onFinished={() => setSplashDone(true)} />
   }
 
   if (!user) return <LoginPage />

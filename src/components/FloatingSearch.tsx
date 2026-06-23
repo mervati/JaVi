@@ -200,7 +200,7 @@ export function FloatingSearch() {
           </div>
 
           {/* Resultados */}
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
             {!showResults ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', gap: '12px' }}>
                 <svg width="44" height="44" fill="none" stroke="#2a2a2a" strokeWidth={1.5} viewBox="0 0 24 24">
