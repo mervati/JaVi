@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.6.0-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.7.0-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -53,6 +53,11 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.7.0
+- `feat` Tela de carregamento com logo animado, barra de progresso azul (50% largura) e porcentagem
+- `feat` Barra de navegação inferior visível dentro do modal de busca da biblioteca
+- `fix` Datas de início/fim registradas automaticamente ao mudar status em séries e filmes
 
 ### v1.6.0
 - `feat` Busca flutuante na biblioteca — FAB de lupa arrastável em Séries e Filmes, filtra por título, #tag, tipo e status
