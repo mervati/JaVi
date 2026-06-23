@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.7.2-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.7.3-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -53,6 +53,9 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.7.3
+- `fix` Barra de navegação inferior no iOS: substituído `position:fixed` por `flex-shrink-0` ancorado ao `100dvh`, eliminando o deslocamento inicial no Safari
 
 ### v1.7.2
 - `fix` Reduz padding da barra de navegação inferior no iOS (`pt-8px pb-2px`) — menos espaço visual acima do safe-area
