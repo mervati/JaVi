@@ -199,7 +199,7 @@ function AppContent() {
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto overflow-x-hidden"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 52px)', overscrollBehaviorY: 'contain' }}
+          style={{ paddingBottom: '16px', overscrollBehaviorY: 'contain' }}
         >
           <Suspense fallback={
             <div className="flex items-center justify-center py-20">
