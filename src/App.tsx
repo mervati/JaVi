@@ -67,6 +67,18 @@ function AppContent() {
   const isDetail = location.pathname.startsWith('/series/') || location.pathname.startsWith('/movie/')
   const prevUser = useRef(user)
   const [splashDone, setSplashDone] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function updateHeight() {
+      if (containerRef.current) {
+        containerRef.current.style.height = `${window.innerHeight}px`
+      }
+    }
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    return () => window.removeEventListener('resize', updateHeight)
+  }, [])
 
   const [showUpdatedToast, setShowUpdatedToast] = useState(() => sessionStorage.getItem('app_just_updated') === '1')
   useEffect(() => {
@@ -161,7 +173,7 @@ function AppContent() {
 
   return (
     <RefreshContext.Provider value={registerRefresh}>
-      <div className="flex flex-col" style={{ height: '100dvh' }}>
+      <div ref={containerRef} className="flex flex-col" style={{ height: '100dvh' }}>
         {!isDetail && (
           <header className="flex-shrink-0 flex items-center justify-center px-5 bg-[#0a0a0a] border-b border-[#1a1a1a] z-40"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px' }}>
