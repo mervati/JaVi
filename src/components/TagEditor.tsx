@@ -70,7 +70,7 @@ export function TagEditor({ item, onSave }: Props) {
             border: '1px solid #2a2a2a',
             borderRadius: '8px',
             padding: '7px 12px',
-            fontSize: '13px',
+            fontSize: '16px',
             color: '#fff',
             outline: 'none',
           }}
