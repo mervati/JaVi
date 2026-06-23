@@ -7,7 +7,7 @@ export function BottomNav() {
 
   return (
     <nav className="bg-[#0a0a0a] border-t border-[#1a1a1a] flex justify-around z-[70]"
-      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom)', transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}>
 
       <NavLink to="/" end className={({ isActive }) => `${base} ${isActive ? active : inactive}`}>
         {({ isActive }) => (<>
