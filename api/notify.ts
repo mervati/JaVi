@@ -36,15 +36,29 @@ export default async function handler(req: any, res: any) {
     if (!TG) return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN ausente' })
     const db = getDB()
     const userRefs = await db.collection('users').listDocuments()
-    let count = 0
+    const debug: any[] = []
+    let sent = 0
     for (const userRef of userRefs) {
       const snap = await userRef.get()
       const chatId = snap.data()?.telegramChatId as string | undefined
-      if (!chatId) continue
-      await sendTelegram(TG, chatId, '✅ *JáVi — Teste de notificação*\n\nSe você recebeu essa mensagem, as notificações do Telegram estão funcionando!')
-      count++
+      const entry: any = { uid: userRef.id, docExists: snap.exists, hasChatId: !!chatId }
+      if (!chatId) { debug.push(entry); continue }
+      try {
+        const tgRes = await fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: '✅ *JáVi — Teste de notificação*\n\nSe você recebeu essa mensagem, as notificações do Telegram estão funcionando!', parse_mode: 'Markdown' }),
+        })
+        const tgJson = await tgRes.json()
+        entry.telegramOk = tgRes.ok
+        entry.telegramError = tgRes.ok ? undefined : tgJson.description
+        if (tgRes.ok) sent++
+      } catch (e) {
+        entry.telegramError = String(e)
+      }
+      debug.push(entry)
     }
-    return res.status(200).json({ ok: true, sent: count })
+    return res.status(200).json({ ok: true, sent, debug })
   }
 
   const TMDB_TOKEN    = process.env.VITE_TMDB_TOKEN
