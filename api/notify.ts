@@ -118,8 +118,7 @@ export default async function handler(req: any, res: any) {
         }
       }
 
-      const tgSeriesLines: string[] = []
-      const tgMovieLines:  string[] = []
+      const tgMessages: string[] = []
 
       for (const seriesId of watchingIds) {
         let series: any
@@ -151,7 +150,7 @@ export default async function handler(req: any, res: any) {
           tag: `ep-${seriesId}-S${s}E${e}`,
         }))
 
-        tgSeriesLines.push(`• *${series.name}* — T${s}E${e}${epName}`)
+        tgMessages.push(`📺 *${series.name}* — T${s}E${e}${epName}`)
         await sentRef.set({ sentAt: todayStr })
       }
 
@@ -178,15 +177,19 @@ export default async function handler(req: any, res: any) {
           tag: `movie-${movieId}-${todayStr}`,
         }))
 
-        tgMovieLines.push(`• *${movie.title}*`)
+        tgMessages.push(`🎥 *${movie.title}* — estreia hoje!`)
         await sentRef.set({ sentAt: todayStr })
       }
 
-      if (hasTelegram && (tgSeriesLines.length || tgMovieLines.length)) {
-        let text = '🎬 *JáVi — Estreias de hoje*\n\n'
-        if (tgSeriesLines.length) text += '📺 *Séries:*\n' + tgSeriesLines.join('\n') + '\n\n'
-        if (tgMovieLines.length)  text += '🎥 *Filmes:*\n'  + tgMovieLines.join('\n')
-        await sendTelegram(TG_TOKEN!, telegramChatId!, text)
+      if (hasTelegram && tgMessages.length) {
+        if (tgMessages.length > 5) {
+          const text = '🎬 *JáVi — Estreias de hoje*\n\n' + tgMessages.join('\n')
+          await sendTelegram(TG_TOKEN!, telegramChatId!, text)
+        } else {
+          for (const msg of tgMessages) {
+            await sendTelegram(TG_TOKEN!, telegramChatId!, msg)
+          }
+        }
       }
     }
 
