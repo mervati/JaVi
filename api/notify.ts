@@ -30,6 +30,23 @@ async function sendTelegram(token: string, chatId: string, text: string) {
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
+  // modo teste: envia mensagem direto para todos os usuários com telegramChatId
+  if (req.query?.test === 'true') {
+    const TG = process.env.TELEGRAM_BOT_TOKEN
+    if (!TG) return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN ausente' })
+    const db = getDB()
+    const userRefs = await db.collection('users').listDocuments()
+    let count = 0
+    for (const userRef of userRefs) {
+      const snap = await userRef.get()
+      const chatId = snap.data()?.telegramChatId as string | undefined
+      if (!chatId) continue
+      await sendTelegram(TG, chatId, '✅ *JáVi — Teste de notificação*\n\nSe você recebeu essa mensagem, as notificações do Telegram estão funcionando!')
+      count++
+    }
+    return res.status(200).json({ ok: true, sent: count })
+  }
+
   const TMDB_TOKEN    = process.env.VITE_TMDB_TOKEN
   const VAPID_PUBLIC  = process.env.VITE_VAPID_PUBLIC_KEY
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY
