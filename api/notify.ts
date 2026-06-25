@@ -53,10 +53,15 @@ export default async function handler(req: any, res: any) {
       const entry: any = { uid: userRef.id, docExists: snap.exists, hasChatId: !!chatId }
       if (!chatId) { debug.push(entry); continue }
       try {
-        const tgRes = await fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
+        const tgRes = await fetch(`https://api.telegram.org/bot${TG}/sendPhoto`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, text: '✅ *JáVi — Teste de notificação*\n\nSe você recebeu essa mensagem, as notificações do Telegram estão funcionando!', parse_mode: 'Markdown' }),
+          body: JSON.stringify({
+            chat_id: chatId,
+            photo: 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
+            caption: '📺 *The Last of Us* — T02E05 — Atravessando\n\n_Exemplo de como as notificações vão chegar._',
+            parse_mode: 'Markdown',
+          }),
         })
         const tgJson = await tgRes.json()
         entry.telegramOk = tgRes.ok
