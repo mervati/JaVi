@@ -58,7 +58,7 @@ export default async function handler(req: any, res: any) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
-            photo: 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
+            photo: 'https://picsum.photos/id/1040/500/750',
             caption: '📺 *The Last of Us* — T02E05 — Atravessando\n\n_Exemplo de como as notificações vão chegar._',
             parse_mode: 'Markdown',
           }),
@@ -66,6 +66,7 @@ export default async function handler(req: any, res: any) {
         const tgJson = await tgRes.json()
         entry.telegramOk = tgRes.ok
         entry.telegramError = tgRes.ok ? undefined : tgJson.description
+        entry.telegramResponse = tgJson
         if (tgRes.ok) sent++
       } catch (e) {
         entry.telegramError = String(e)
