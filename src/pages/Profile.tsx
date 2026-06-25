@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, onSnapshot } from 'firebase/firestore'
+import { collection, query, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuth } from '../contexts/AuthContext'
 import { useLibrary } from '../hooks/useLibrary'
 import { PosterImage } from '../components/PosterImage'
@@ -246,6 +246,30 @@ export function Profile() {
     }
   }
 
+  const [telegramChatId, setTelegramChatId] = useState('')
+  const [telegramInput, setTelegramInput]   = useState('')
+  const [telegramSaving, setTelegramSaving] = useState(false)
+  const [telegramSaved, setTelegramSaved]   = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      const id = snap.data()?.telegramChatId ?? ''
+      setTelegramChatId(id)
+      setTelegramInput(id)
+    })
+  }, [user])
+
+  async function saveTelegramChatId() {
+    if (!user) return
+    setTelegramSaving(true)
+    await setDoc(doc(db, 'users', user.uid), { telegramChatId: telegramInput.trim() }, { merge: true })
+    setTelegramChatId(telegramInput.trim())
+    setTelegramSaving(false)
+    setTelegramSaved(true)
+    setTimeout(() => setTelegramSaved(false), 2500)
+  }
+
   const watched   = items.filter(i => i.status === 'watched')
   const watchlist = items.filter(i => i.status === 'watchlist')
   const watching  = items.filter(i => i.status === 'watching')
@@ -487,6 +511,59 @@ export function Profile() {
               </button>
             </div>
           )}
+
+          {/* telegram */}
+          <div className="px-4" style={{ paddingTop: '16px' }}>
+            <div className="rounded-2xl" style={{ background: '#111', border: '1px solid #222', padding: '16px 20px' }}>
+              <div className="flex items-center gap-3 mb-3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M21.2 2.5L2.3 9.9c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 1.8 5.5c.2.6.5.8 1 .8.4 0 .6-.2.9-.5l2.2-2.2 4.6 3.4c.8.5 1.4.2 1.6-.8L22 3.8c.3-1.2-.5-1.8-1.3-1.3z" fill="#2ca5e0"/>
+                </svg>
+                <div>
+                  <p className="text-white text-sm font-bold">Notificações no Telegram</p>
+                  <p className="text-[10px] font-medium" style={{ color: '#555' }}>
+                    {telegramChatId ? '✓ Configurado' : 'Receba estreias do calendário pelo Telegram'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl mb-2" style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', padding: '10px 14px' }}>
+                <p className="text-[#555] text-[11px] font-bold uppercase tracking-wider mb-1">Como configurar</p>
+                <p className="text-[#666] text-xs leading-relaxed">
+                  1. No Telegram, busque <span style={{ color: '#2ca5e0' }}>@userinfobot</span> e envie qualquer mensagem{'\n'}
+                  2. Copie o número do campo <span style={{ color: '#aaa' }}>Id</span> que ele responder{'\n'}
+                  3. Cole abaixo e salve
+                </p>
+              </div>
+
+              <input
+                value={telegramInput}
+                onChange={e => setTelegramInput(e.target.value)}
+                placeholder="Ex: 123456789"
+                inputMode="numeric"
+                style={{
+                  width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a',
+                  borderRadius: '10px', padding: '10px 14px', fontSize: '15px',
+                  color: '#fff', outline: 'none', marginBottom: '10px', boxSizing: 'border-box',
+                }}
+              />
+
+              <button
+                onClick={saveTelegramChatId}
+                disabled={telegramSaving || telegramInput.trim() === telegramChatId}
+                className="w-full rounded-xl font-bold text-sm"
+                style={{
+                  padding: '11px',
+                  background: telegramSaved ? '#4caf50' : '#2ca5e0',
+                  color: '#fff',
+                  opacity: (telegramSaving || telegramInput.trim() === telegramChatId) ? 0.4 : 1,
+                  transition: 'background 0.2s, opacity 0.2s',
+                }}
+              >
+                {telegramSaved ? '✓ Salvo!' : telegramSaving ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
 
           {/* botão sair */}
           <div className="px-4" style={{ paddingTop: '20px', paddingBottom: '8px' }}>

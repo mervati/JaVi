@@ -19,13 +19,22 @@ function todayUTC(): string {
   return `${y}-${m}-${day}`
 }
 
+async function sendTelegram(token: string, chatId: string, text: string) {
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+  })
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const TMDB_TOKEN = process.env.VITE_TMDB_TOKEN
-  const VAPID_PUBLIC = process.env.VITE_VAPID_PUBLIC_KEY
+  const TMDB_TOKEN    = process.env.VITE_TMDB_TOKEN
+  const VAPID_PUBLIC  = process.env.VITE_VAPID_PUBLIC_KEY
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY
-  const VAPID_EMAIL = process.env.VAPID_EMAIL ?? 'mailto:javi@app.com'
+  const VAPID_EMAIL   = process.env.VAPID_EMAIL ?? 'mailto:javi@app.com'
+  const TG_TOKEN      = process.env.TELEGRAM_BOT_TOKEN
 
   if (!TMDB_TOKEN || !VAPID_PUBLIC || !VAPID_PRIVATE) {
     return res.status(500).json({ error: 'Variáveis de ambiente ausentes' })
@@ -43,20 +52,26 @@ export default async function handler(req: any, res: any) {
 
     for (const userRef of userRefs) {
       const subsSnap = await userRef.collection('push_subscriptions').get()
-      if (subsSnap.empty) continue
+      const userDoc  = await userRef.get()
+      const telegramChatId = userDoc.data()?.telegramChatId as string | undefined
+
+      const hasPush     = !subsSnap.empty
+      const hasTelegram = !!(TG_TOKEN && telegramChatId)
+      if (!hasPush && !hasTelegram) continue
 
       const librarySnap = await userRef.collection('library').get()
       const libraryDocs = librarySnap.docs.map(d => d.data())
 
       const watchingIds: number[] = libraryDocs
-        .filter(d => d.type === 'tv' && (d.status === 'watching' || d.status === 'watchlist'))
+        .filter(d => d.type === 'tv' && d.status === 'watching')
         .map(d => d.id as number)
 
       const watchlistMovieIds: number[] = libraryDocs
         .filter(d => d.type === 'movie' && d.status === 'watchlist')
         .map(d => d.id as number)
 
-      async function sendToAllSubs(payload: string) {
+      async function sendPush(payload: string) {
+        if (!hasPush) return
         for (const subDoc of subsSnap.docs) {
           const sub = subDoc.data()
           try {
@@ -66,12 +81,13 @@ export default async function handler(req: any, res: any) {
             )
             sent++
           } catch (err: any) {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              await subDoc.ref.delete()
-            }
+            if (err.statusCode === 410 || err.statusCode === 404) await subDoc.ref.delete()
           }
         }
       }
+
+      const tgSeriesLines: string[] = []
+      const tgMovieLines:  string[] = []
 
       for (const seriesId of watchingIds) {
         let series: any
@@ -81,10 +97,7 @@ export default async function handler(req: any, res: any) {
             { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } }
           )
           series = await resp.json()
-        } catch {
-          skipped++
-          continue
-        }
+        } catch { skipped++; continue }
 
         const nextEp = series.next_episode_to_air
         const lastEp = series.last_episode_to_air
@@ -99,12 +112,14 @@ export default async function handler(req: any, res: any) {
         const sentRef = userRef.collection('notifications_sent').doc(dedupId)
         if ((await sentRef.get()).exists) { skipped++; continue }
 
-        await sendToAllSubs(JSON.stringify({
+        await sendPush(JSON.stringify({
           title: series.name ?? 'JáVi',
           body: `T${s}E${e}${epName} vai ao ar hoje! 🎬`,
           url: `/series/${seriesId}`,
           tag: `ep-${seriesId}-S${s}E${e}`,
         }))
+
+        tgSeriesLines.push(`• *${series.name}* — T${s}E${e}${epName}`)
         await sentRef.set({ sentAt: todayStr })
       }
 
@@ -116,10 +131,7 @@ export default async function handler(req: any, res: any) {
             { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } }
           )
           movie = await resp.json()
-        } catch {
-          skipped++
-          continue
-        }
+        } catch { skipped++; continue }
 
         if (movie.release_date !== todayStr) continue
 
@@ -127,13 +139,22 @@ export default async function handler(req: any, res: any) {
         const sentRef = userRef.collection('notifications_sent').doc(dedupId)
         if ((await sentRef.get()).exists) { skipped++; continue }
 
-        await sendToAllSubs(JSON.stringify({
+        await sendPush(JSON.stringify({
           title: movie.title ?? 'JáVi',
           body: `Estreia hoje! Não perca. 🎬`,
           url: `/movie/${movieId}`,
           tag: `movie-${movieId}-${todayStr}`,
         }))
+
+        tgMovieLines.push(`• *${movie.title}*`)
         await sentRef.set({ sentAt: todayStr })
+      }
+
+      if (hasTelegram && (tgSeriesLines.length || tgMovieLines.length)) {
+        let text = '🎬 *JáVi — Estreias de hoje*\n\n'
+        if (tgSeriesLines.length) text += '📺 *Séries:*\n' + tgSeriesLines.join('\n') + '\n\n'
+        if (tgMovieLines.length)  text += '🎥 *Filmes:*\n'  + tgMovieLines.join('\n')
+        await sendTelegram(TG_TOKEN!, telegramChatId!, text)
       }
     }
 
