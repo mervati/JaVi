@@ -31,7 +31,8 @@ export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   // modo teste: envia mensagem direto para todos os usuários com telegramChatId
-  if (req.query?.test === 'true') {
+  const isTest = req.query?.test === 'true' || (req.url ?? '').includes('test=true')
+  if (isTest) {
     const TG = process.env.TELEGRAM_BOT_TOKEN
     if (!TG) return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN ausente' })
     const db = getDB()
