@@ -19,12 +19,20 @@ function todayUTC(): string {
   return `${y}-${m}-${day}`
 }
 
-async function sendTelegram(token: string, chatId: string, text: string) {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
-  })
+async function sendTelegram(token: string, chatId: string, text: string, photo?: string) {
+  if (photo) {
+    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, photo, caption: text, parse_mode: 'Markdown' }),
+    })
+  } else {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    })
+  }
 }
 
 export default async function handler(req: any, res: any) {
@@ -118,7 +126,7 @@ export default async function handler(req: any, res: any) {
         }
       }
 
-      const tgMessages: string[] = []
+      const tgMessages: { text: string; photo?: string }[] = []
 
       for (const seriesId of watchingIds) {
         let series: any
@@ -150,7 +158,8 @@ export default async function handler(req: any, res: any) {
           tag: `ep-${seriesId}-S${s}E${e}`,
         }))
 
-        tgMessages.push(`📺 *${series.name}* — T${s}E${e}${epName}`)
+        const poster = series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : undefined
+        tgMessages.push({ text: `📺 *${series.name}* — T${s}E${e}${epName}`, photo: poster })
         await sentRef.set({ sentAt: todayStr })
       }
 
@@ -177,17 +186,18 @@ export default async function handler(req: any, res: any) {
           tag: `movie-${movieId}-${todayStr}`,
         }))
 
-        tgMessages.push(`🎥 *${movie.title}* — estreia hoje!`)
+        const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : undefined
+        tgMessages.push({ text: `🎥 *${movie.title}* — estreia hoje!`, photo: poster })
         await sentRef.set({ sentAt: todayStr })
       }
 
       if (hasTelegram && tgMessages.length) {
         if (tgMessages.length > 5) {
-          const text = '🎬 *JáVi — Estreias de hoje*\n\n' + tgMessages.join('\n')
+          const text = '🎬 *JáVi — Estreias de hoje*\n\n' + tgMessages.map(m => m.text).join('\n')
           await sendTelegram(TG_TOKEN!, telegramChatId!, text)
         } else {
           for (const msg of tgMessages) {
-            await sendTelegram(TG_TOKEN!, telegramChatId!, msg)
+            await sendTelegram(TG_TOKEN!, telegramChatId!, msg.text, msg.photo)
           }
         }
       }
