@@ -1,6 +1,6 @@
 # JáVi 🎬📺
 
-![version](https://img.shields.io/badge/version-1.8.0-f5b730?style=flat-square)
+![version](https://img.shields.io/badge/version-1.8.1-f5b730?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
@@ -53,6 +53,10 @@ VITE_FIREBASE_APP_ID=...
 ```
 
 ## Changelog
+
+### v1.8.1
+- `fix` Posição da barra de navegação inferior no iOS via `visualViewport.height` (altura real visível, atualiza quando a toolbar do Safari aparece/some)
+- `style` Barra de navegação inferior mais alta (padding vertical maior nos itens)
 
 ### v1.8.0
 - `feat` Notificações diárias no Telegram — cron às 9h envia mensagem consolidada com séries (assistindo) e filmes (quero ver) que estreiam no dia
