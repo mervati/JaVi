@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 
 export function BottomNav() {
-  const base = 'flex flex-col items-center gap-0.5 pt-[8px] pb-[2px] px-2 transition-colors flex-1'
+  const base = 'flex flex-col items-center gap-1 pt-[24px] pb-[24px] px-2 transition-colors flex-1'
   const active = 'text-white'
   const inactive = 'text-[#444]'
 
